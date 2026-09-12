@@ -1890,7 +1890,7 @@
     </button>
   </div>
   <div class="brand-block" onclick="goHome()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome();}" aria-label="THE TIMEPIECE home" style="cursor:pointer;">
-    <div class="logo-badge"><svg class="logo-img" viewBox="0 0 64 80" role="img" aria-label="The Timepiece watch mark" xmlns="http://www.w3.org/2000/svg"><rect x="24" y="4" width="16" height="14" rx="2" fill="currentColor"/><rect x="24" y="62" width="16" height="14" rx="2" fill="currentColor"/><circle cx="32" cy="40" r="22" fill="none" stroke="currentColor" stroke-width="5"/><rect x="54" y="36" width="8" height="8" rx="1.5" fill="currentColor"/><line x1="32" y1="40" x2="32" y2="25" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="40" x2="21" y2="33" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="32" cy="40" r="2.6" fill="currentColor"/></svg></div>
+    <div class="logo-badge"><img class="logo-img" src="images/logo.png" alt="The Timepiece logo"></div>
     <div class="logo display">THE TIMEPIECE</div>
   </div>
   <div class="header-side header-side-right">
@@ -1983,13 +1983,13 @@
 
   <h2 class="welcome-gender-heading">Shop by Category</h2>
   <div class="welcome-gender-stack">
-    <button class="gender-card gender-card-wide" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Footwear">
+    <button class="gender-card gender-card-wide" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Watches">
       <img src="images/hero-mens.jpg" alt="Man wearing a stainless steel automatic watch">
-      <div class="gender-card-overlay"><span class="gender-card-label">Men's Footwear</span></div>
+      <div class="gender-card-overlay"><span class="gender-card-label">Men's Watches</span></div>
     </button>
-    <button class="gender-card gender-card-wide" onclick="selectGenderCategory('womens')" aria-label="Shop Women's Footwear">
+    <button class="gender-card gender-card-wide" onclick="selectGenderCategory('womens')" aria-label="Shop Women's Watches">
       <img src="images/hero-womens.jpg" alt="Woman wearing a slim analog watch with a leather strap">
-      <div class="gender-card-overlay"><span class="gender-card-label">Women's Footwear</span></div>
+      <div class="gender-card-overlay"><span class="gender-card-label">Women's Watches</span></div>
     </button>
   </div>
 
@@ -2022,11 +2022,11 @@
 <div id="productsView">
 <h1 class="page-heading" id="pageHeading" style="display:none"></h1>
 <div class="ap-gender-tiles" id="apGenderTiles" style="display:none">
-  <button class="ap-gender-tile" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Footwear">
+  <button class="ap-gender-tile" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Watches">
     <img src="images/hero-mens.jpg" alt="Man wearing a stainless steel automatic watch" loading="lazy">
     <div class="ap-gender-tile-overlay"><span class="ap-gender-tile-label">Men's</span></div>
   </button>
-  <button class="ap-gender-tile" onclick="selectGenderCategory('womens')" aria-label="Shop Women's Footwear">
+  <button class="ap-gender-tile" onclick="selectGenderCategory('womens')" aria-label="Shop Women's Watches">
     <img src="images/hero-womens.jpg" alt="Woman wearing a slim analog watch with a leather strap" loading="lazy">
     <div class="ap-gender-tile-overlay"><span class="ap-gender-tile-label">Women's</span></div>
   </button>
@@ -2092,15 +2092,15 @@
   <div class="hamburger-panel" role="dialog" aria-modal="true" aria-labelledby="hamburgerHeading">
     <button class="hamburger-close" onclick="closeHamburger()" aria-label="Close menu">✕</button>
     <div class="hamburger-brand">
-      <div class="logo-badge"><svg class="logo-img" viewBox="0 0 64 80" role="img" aria-label="The Timepiece watch mark" xmlns="http://www.w3.org/2000/svg"><rect x="24" y="4" width="16" height="14" rx="2" fill="currentColor"/><rect x="24" y="62" width="16" height="14" rx="2" fill="currentColor"/><circle cx="32" cy="40" r="22" fill="none" stroke="currentColor" stroke-width="5"/><rect x="54" y="36" width="8" height="8" rx="1.5" fill="currentColor"/><line x1="32" y1="40" x2="32" y2="25" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="40" x2="21" y2="33" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="32" cy="40" r="2.6" fill="currentColor"/></svg></div>
+      <div class="logo-badge"><img class="logo-img" src="images/logo.png" alt="The Timepiece logo"></div>
       <div class="logo display">THE TIMEPIECE</div>
     </div>
 
     <div class="hamburger-section-title" id="hamburgerHeading">Menu</div>
     <button class="hamburger-link" onclick="closeHamburger(); goHome();">Home</button>
     <button class="hamburger-link" onclick="closeHamburger(); showAllProducts();">Shop</button>
-    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('mens')">Men's Footwear</button>
-    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('womens')">Women's Footwear</button>
+    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('mens')">Men's Watches</button>
+    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('womens')">Women's Watches</button>
     <button class="hamburger-link" onclick="closeHamburger(); goToOffers();">Offers</button>
     <button class="hamburger-link" onclick="closeHamburger(); selectPriceTierHero('premium3000')">Premium</button>
 
@@ -2168,16 +2168,6 @@
       <div class="policy-block">
         <div class="policy-num">4</div>
         <div>
-          <h3 class="policy-title">Sizing Issues</h3>
-          <p><strong>Customer Error:</strong> We do not offer returns or replacements if the customer orders the wrong size. Please refer to our size chart carefully before placing your order.</p>
-          <p style="margin-top:8px;"><strong>Size Exchange:</strong> Size exchange is available only if the requested size is in stock, and the customer is responsible for two-way shipping charges.</p>
-          <p style="margin-top:8px;"><strong>Our Error:</strong> If we send a size different from the one you ordered, we will replace it free of charge, subject to the 360° unboxing video requirement.</p>
-        </div>
-      </div>
-
-      <div class="policy-block">
-        <div class="policy-num">5</div>
-        <div>
           <h3 class="policy-title">Return and Refund Policy</h3>
           <p>At THE TIMEPIECE, all products are sold under a No Return &amp; No Refund policy. All sales are final once an order is placed.</p>
           <p>However, selected products may be eligible for Cash on Delivery (COD). If applicable, this will be clearly stated on the product page.</p>
@@ -2186,7 +2176,7 @@
       </div>
 
       <div class="policy-block">
-        <div class="policy-num">6</div>
+        <div class="policy-num">5</div>
         <div>
           <h3 class="policy-title">Contact Us</h3>
           <p>If you have any questions regarding your order or these policies, please contact us through our official WhatsApp or Instagram account.</p>
@@ -2457,7 +2447,7 @@ function trackEvent(name, params){
   } catch(e){ /* analytics should never break the site */ }
 }
 const FACEBOOK_URL = "https://facebook.com/thetimepiece"; // <-- TODO: replace with your actual Page URL
-const INSTAGRAM_URL = "https://instagram.com/thetimepiece"; // <-- TODO: replace with your actual handle
+const INSTAGRAM_URL = "https://instagram.com/thetimepiece__";
 
 // This is NOT your Google Sheet's own CSV link - it's the URL of the
 // Cloudflare Worker (see cache-worker.js, delivered alongside this file)
@@ -3637,8 +3627,8 @@ function updatePageChrome(){
   const isPlainAllProducts = activeGender === null && activeFilter === "all";
   const isOffersTier = ["offers", "under1000", "under1500", "under2000", "seasonal"].includes(activeFilter);
   let label = "Shop";
-  if(activeGender === "M") label = "Men's Footwear";
-  else if(activeGender === "W") label = "Women's Footwear";
+  if(activeGender === "M") label = "Men's Watches";
+  else if(activeGender === "W") label = "Women's Watches";
   else if(activeFilter === "premium3000") label = "Premium";
   else if(activeFilter === "offers") label = "Offers";
   else if(activeFilter === "under1000") label = "Under ₹1,000";
@@ -3870,13 +3860,13 @@ function setGender(g){
 }
 
 // Entry point for the two large homepage cards, and for the "Men's
-// Footwear"/"Women's Footwear" links in the hamburger menu.
+// Watches"/"Women's Watches" links in the hamburger menu.
 function selectGenderCategory(gender){
   setGender(gender === "womens" ? "W" : "M");
 }
 
 // Drops back to the unisex "All" view without touching type/brand/size
-// filters - the exit action on the "Men's/Women's Footwear" chip.
+// filters - the exit action on the "Men's/Women's Watches" chip.
 function clearGenderFilter(){
   activeGender = null;
   currentPage = 1;
