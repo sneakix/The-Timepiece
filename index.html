@@ -1447,7 +1447,7 @@
   }
   .item-detail-info .add-btn{ margin-top:20px; }
 
-  /* Full spec list (Movement, Case Material, Strap Material, Case Size,
+  /* Full spec list (Case Material, Strap Material, Case Size,
      Water Resistance, Warranty) - simple label/value rows, only rendered
      for whichever fields actually have a value in the sheet. */
   .spec-list{ margin-top:18px; border-top:1px solid var(--line); }
@@ -2255,30 +2255,12 @@
         </div></div></div>
       </div>
 
-      <div class="filter-accordion-item" id="filterAccordion-type">
-        <button class="filter-accordion-header" onclick="toggleFilterSection('type')" aria-expanded="false">
-          <h3>Type</h3><span class="chevron">›</span>
-        </button>
-        <div class="filter-accordion-body"><div class="filter-accordion-body-inner"><div class="filter-accordion-content">
-          <div class="filter-chip-row" id="filterTypeRow"></div>
-        </div></div></div>
-      </div>
-
       <div class="filter-accordion-item" id="filterAccordion-brand">
         <button class="filter-accordion-header" onclick="toggleFilterSection('brand')" aria-expanded="false">
           <h3>Brand <span class="filter-hint">(select multiple)</span></h3><span class="chevron">›</span>
         </button>
         <div class="filter-accordion-body"><div class="filter-accordion-body-inner"><div class="filter-accordion-content">
           <div class="filter-chip-row" id="filterBrandRow"></div>
-        </div></div></div>
-      </div>
-
-      <div class="filter-accordion-item" id="filterAccordion-model">
-        <button class="filter-accordion-header" onclick="toggleFilterSection('model')" aria-expanded="false">
-          <h3>Model <span class="filter-hint">(select multiple)</span></h3><span class="chevron">›</span>
-        </button>
-        <div class="filter-accordion-body"><div class="filter-accordion-body-inner"><div class="filter-accordion-content">
-          <div class="filter-chip-row" id="filterModelRow"></div>
         </div></div></div>
       </div>
 
@@ -2297,32 +2279,6 @@
               <input type="range" id="priceMaxSlider" min="0" max="10000" step="100" value="10000" oninput="onPriceSliderChange()" aria-label="Maximum price">
             </div>
           </div>
-        </div></div></div>
-      </div>
-
-      <div class="filter-accordion-item" id="filterAccordion-size">
-        <button class="filter-accordion-header" onclick="toggleFilterSection('size')" aria-expanded="false">
-          <h3>Size</h3><span class="chevron">›</span>
-        </button>
-        <div class="filter-accordion-body"><div class="filter-accordion-body-inner"><div class="filter-accordion-content">
-          <div class="filter-chip-row" id="filterSizeAnyRow"></div>
-          <div class="size-filter-block">
-            <span class="size-filter-label">EU</span>
-            <div class="filter-chip-row" id="filterSizeRowEU"></div>
-          </div>
-          <div class="size-filter-block">
-            <span class="size-filter-label" id="filterSizeLabelSecondary">UK</span>
-            <div class="filter-chip-row" id="filterSizeRowUK"></div>
-          </div>
-        </div></div></div>
-      </div>
-
-      <div class="filter-accordion-item" id="filterAccordion-quality" style="display:none;">
-        <button class="filter-accordion-header" onclick="toggleFilterSection('quality')" aria-expanded="false">
-          <h3>Quality</h3><span class="chevron">›</span>
-        </button>
-        <div class="filter-accordion-body"><div class="filter-accordion-body-inner"><div class="filter-accordion-content">
-          <div class="filter-chip-row" id="filterQualityRow"></div>
         </div></div></div>
       </div>
 
@@ -2411,12 +2367,14 @@
 
    Name             -> product name/model
    Brand            -> manufacturer
-   Category         -> Analog / Digital / Smartwatch / Chronograph -
+   Category         -> Analog / Digital / Smartwatch / Chronograph /
+                        Automatic / Mechanical - one flat list, no separate
+                        Movement column. Put whichever value best segments
+                        the watch (a case for an automatic movement can
+                        just say "Automatic" here instead of "Analog") -
                         also feeds the segment chips (see watchSegments())
    Gender           -> Men / Women / Unisex - anything else defaults to
                         Unisex (shown under both) rather than disappearing
-   Movement         -> Quartz / Automatic / Mechanical - also feeds the
-                        segment chips alongside Category
    Case Material    -> free text, shown in the spec list (e.g. "Stainless
                         Steel", "Titanium")
    Strap Material   -> free text, shown in the spec list
@@ -2553,7 +2511,6 @@ function rowsToWatches(rows){
     const name = (r["Name"] || "").trim();
     const brand = (r["Brand"] || "").trim();
     const category = (r["Category"] || "").trim();
-    const movement = (r["Movement"] || "").trim();
     // Gender comes from its own sheet column (Men / Women / Unisex).
     // Anything missing or not recognized defaults to Unisex (shown under
     // both Men's and Women's) rather than disappearing from both - safer
@@ -2590,7 +2547,6 @@ function rowsToWatches(rows){
       name,
       brand,
       category,
-      movement,
       gender,
       price,
       caseMaterial,
@@ -2630,15 +2586,16 @@ function rowsToWatches(rows){
   }).filter(s => s.name && s.images.length > 0 && s.websiteListed);
 }
 
-// A watch's browsing "segment" tags - Category and Movement values are
-// treated as one flat, equal-weight set of chips (Analog, Digital,
-// Chronograph, Smartwatch, Automatic, Quartz, Mechanical, etc.) rather
-// than two separate filter axes. See renderCategories()/setCategory().
+// A watch's browsing "segment" tag - just its Category value (Analog,
+// Digital, Chronograph, Smartwatch, Automatic, Mechanical, etc - whatever
+// actually appears in the sheet). Movement used to be a separate column
+// merged in here; it's gone now, so Category alone carries movement-type
+// values too (put "Automatic"/"Mechanical" directly in the Category cell
+// for those watches). Kept as an array (rather than returning the string
+// directly) so segmentMatches() and the accessory catalog - which may add
+// a second real facet later - don't need to change shape again.
 function watchSegments(watch){
-  const segs = [];
-  if(watch.category) segs.push(watch.category);
-  if(watch.movement && watch.movement !== watch.category) segs.push(watch.movement);
-  return segs;
+  return watch.category ? [watch.category] : [];
 }
 
 // ---------- Catalog caching (localStorage) ----------
@@ -2998,10 +2955,10 @@ let suppressViewHashPush = false;
 let hashViewApplied = false;
 let activeFilter = "all";       // all | new | sale | under2000 | under1500 | under1000 | premium3000
 let activeGender = null;        // null | "M" | "W" - independent of segment now that Gender is its own sheet column
-// activeCategory is now the SEGMENT filter - "All", or one value drawn
-// from either the Category or Movement column (Analog/Digital/Chronograph/
-// Smartwatch/Automatic/Quartz/Mechanical/etc, whatever actually appears in
-// the sheet) - see watchSegments()/renderCategories()/setCategory().
+// activeCategory is the SEGMENT filter - "All", or one Category value
+// (Analog/Digital/Chronograph/Smartwatch/Automatic/Mechanical/etc,
+// whatever actually appears in the sheet) - see
+// watchSegments()/renderCategories()/setCategory().
 let activeCategory = "All";
 let activeAvailFilters = new Set(); // 'cod' - empty set = no availability filter applied
 let activeBrands = new Set();   // multi-select: empty set = "All"
@@ -3603,10 +3560,8 @@ function escForInlineJs(str){
 // case/whitespace-insensitive so small sheet inconsistencies ("ballet"
 // vs "Ballet") still match the chip.
 function normalizeCategoryValue(cat){ return (cat || "").trim(); }
-// A watch matches a segment filter if EITHER its Category or its
-// Movement equals the segment value - Category and Movement are treated
-// as one flat, equal-weight set of browsing tags (Analog/Digital/
-// Chronograph/Smartwatch/Automatic/Quartz/Mechanical), not two axes.
+// A watch matches a segment filter if its Category equals the segment
+// value (case/whitespace-insensitive).
 function segmentMatches(watch, segment){
   const target = normalizeCategoryValue(segment).toLowerCase();
   return watchSegments(watch).some(s => normalizeCategoryValue(s).toLowerCase() === target);
@@ -3626,13 +3581,14 @@ function watchMatchesGender(watch, g){
   return watch.gender === "MW" || watch.gender === g;
 }
 
-// Fixed display order for the segment chips/cards, mixing Category and
-// Movement values into one flat list. Only segments that actually have
-// at least one product are shown, but whenever present they always
-// appear in this order rather than the sheet's order. A Category or
-// Movement value not on this list still works for filtering - it just
-// sorts to the end (see the .sort() fallback in renderCategories()).
-const CATEGORY_ORDER = ["All", "Analog", "Digital", "Chronograph", "Smartwatch", "Automatic", "Quartz", "Mechanical"];
+// Fixed display order for the segment chips/cards - all Category values,
+// movement types included (Automatic/Mechanical have no separate column
+// anymore, they're just Category values). Only segments that actually
+// have at least one product are shown, but whenever present they always
+// appear in this order rather than the sheet's order. A Category value
+// not on this list still works for filtering - it just sorts to the end
+// (see the .sort() fallback in renderCategories()).
+const CATEGORY_ORDER = ["All", "Analog", "Digital", "Chronograph", "Smartwatch", "Automatic", "Mechanical", "Quartz"];
 
 // One representative photo per segment, used by the image-card picker.
 // Falls back to a plain text chip (no image) for any segment without an
@@ -4341,9 +4297,8 @@ function resetFilterState(){
 // Entry point for the "Spectacles & Accessories" nav link (header +
 // hamburger). A separate top-level section, not a Watches gender/offer
 // tier - no gender split, its own Category-only segment chips (see
-// activeCatalog()/segmentMatches - Movement never applies here since
-// accessory sheets don't have a Movement column). Only reachable at all
-// once hasAccessories is true (see applyAccessoryRows) - the nav link
+// activeCatalog()/segmentMatches). Only reachable at all once
+// hasAccessories is true (see applyAccessoryRows) - the nav link
 // itself is hidden until then.
 function openAccessoriesSection(){
   closeAllOverlays();
@@ -4411,7 +4366,7 @@ function resetPriceFilter(){
 }
 
 function renderFilterSheet(){
-  if(!document.getElementById("filterTypeRow")) return;
+  if(!document.getElementById("filterBrandRow")) return;
 
   const sortOptions = SORT_OPTIONS;
   const sortRowHtml = sortOptions.map(([key,label])=>
@@ -4489,7 +4444,7 @@ function getFilteredWatches(){
     // inside Men's/Women's/any other filter, search stays scoped to it.
     if(searchTerm){
       const availKeywords = watch.codAvailable ? 'cod cash on delivery cash on delivery available' : '';
-      const haystack = `${watch.name} ${watch.brand} ${watch.category} ${watch.movement} ${availKeywords}`.toLowerCase();
+      const haystack = `${watch.name} ${watch.brand} ${watch.category} ${availKeywords}`.toLowerCase();
       if(!haystack.includes(searchTerm)) return false;
     }
     if(activeGender && !watchMatchesGender(watch, activeGender)) return false;
@@ -5079,8 +5034,8 @@ function itemDetailPhotoGoTo(index){
 }
 
 // Ranking, in priority order:
-//   1. Segment match - shares a Category or Movement value with the
-//      current watch (e.g. both "Chronograph", both "Automatic") ranks
+//   1. Segment match - shares a Category value with the current watch
+//      (e.g. both "Chronograph", both "Automatic") ranks
 //      above just sharing a brand with no segment match, which ranks
 //      above no segment/brand relation at all.
 //   2. Within each of those tiers, closest price wins.
@@ -5190,7 +5145,6 @@ function renderItemDetail(){
   // shown, so a blank Case Material/Warranty/etc cell just quietly omits
   // that line rather than showing "Case Material: -".
   const specRows = [
-    ["Movement", watch.movement],
     ["Case Material", watch.caseMaterial],
     ["Strap Material", watch.strapMaterial],
     ["Case Size", watch.caseSize ? `${watch.caseSize}mm` : ""],
@@ -5560,7 +5514,6 @@ function renderComparePage(container){
 
         <dl class="compare-attr-list">
           <div class="compare-attr-row"><dt>Brand</dt><dd>${escapeHtml(s.brand)}</dd></div>
-          ${s.movement ? `<div class="compare-attr-row"><dt>Movement</dt><dd>${escapeHtml(s.movement)}</dd></div>` : ''}
           ${s.caseSize ? `<div class="compare-attr-row"><dt>Case Size</dt><dd>${escapeHtml(s.caseSize)}mm</dd></div>` : ''}
           ${s.waterResistance ? `<div class="compare-attr-row"><dt>Water Resistance</dt><dd>${escapeHtml(s.waterResistance)}</dd></div>` : ''}
           ${s.warranty ? `<div class="compare-attr-row"><dt>Warranty</dt><dd>${escapeHtml(s.warranty)}</dd></div>` : ''}
