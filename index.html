@@ -4238,6 +4238,7 @@ function submitSearchOverlay(){
 }
 
 function openHomeFilters(){
+  closeSearchOverlay();
   homeFiltersSession = true;
   openSheetById("filterOverlay");
 }
