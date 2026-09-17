@@ -3727,6 +3727,7 @@ function updatePageChrome(){
   if(activeSection === "accessories") label = "Spectacles & Accessories";
   else if(activeGender === "M") label = "Men's Watches";
   else if(activeGender === "W") label = "Women's Watches";
+  else if(activeGender === "MW") label = "Unisex Watches";
   else if(activeFilter === "premium3000") label = "Premium";
   else if(activeFilter === "offers") label = "Offers";
   else if(activeFilter === "under1000") label = "Under ₹1,000";
@@ -4341,7 +4342,7 @@ function renderSelectedFilters(){
   // one didn't actually leave the page it named.
   activeBrands.forEach(b => chips.push({ label:b, onclick:`removeBrand('${escForInlineJs(b)}')` }));
   if(activeCategory !== "All") chips.push({ label: activeCategory, onclick:`setCategory('All')` });
-  if(activeGender) chips.push({ label: activeGender === "M" ? "Men" : "Women", onclick:`setGenderFilter('All')` });
+  if(activeGender) chips.push({ label: activeGender === "M" ? "Men" : activeGender === "W" ? "Women" : "Unisex", onclick:`setGenderFilter('All')` });
   if(filterNewOnly) chips.push({ label:"New Arrivals", onclick:`toggleNewOnly()` });
   if(filterSaleOnly) chips.push({ label:"On Sale", onclick:`toggleSaleOnly()` });
   if(activeAvailFilters.has("cod")) chips.push({ label:"Cash on Delivery Available (COD)", onclick:`removeAvailFilter('cod')` });
@@ -4410,7 +4411,7 @@ function renderFilterSheet(){
   // chip needed here.
   const genderRow = document.getElementById("filterGenderRow");
   if(genderRow){
-    const genderOptions = [["All","All"], ["M","Men"], ["W","Women"]];
+    const genderOptions = [["All","All"], ["M","Men"], ["W","Women"], ["MW","Unisex"]];
     genderRow.innerHTML = genderOptions.map(([key,label])=>{
       const active = key === "All" ? activeGender === null : activeGender === key;
       return `<button class="filter-chip ${active?'active':''}" onclick="setGenderFilter('${key}')">${label}</button>`;
@@ -5159,6 +5160,7 @@ function renderItemDetail(){
   // blank Case Size cell just quietly omits that line.
   const genderLabel = watch.gender === "W" ? "Her" : watch.gender === "M" ? "Him" : "Everyone";
   const specRows = [
+    ["Type", watch.category],
     ["For", genderLabel],
     ["Case Size", watch.caseSize ? `${watch.caseSize}mm` : ""],
   ].filter(([, val]) => val);
@@ -5525,6 +5527,7 @@ function renderComparePage(container){
 
         <dl class="compare-attr-list">
           <div class="compare-attr-row"><dt>Brand</dt><dd>${escapeHtml(s.brand)}</dd></div>
+          ${s.category ? `<div class="compare-attr-row"><dt>Type</dt><dd>${escapeHtml(s.category)}</dd></div>` : ''}
           <div class="compare-attr-row"><dt>For</dt><dd>${s.gender === "W" ? "Her" : s.gender === "M" ? "Him" : "Everyone"}</dd></div>
           ${s.caseSize ? `<div class="compare-attr-row"><dt>Case Size</dt><dd>${escapeHtml(s.caseSize)}mm</dd></div>` : ''}
           ${showCod ? `<div class="compare-attr-row"><dt>Cash on Delivery</dt><dd>${s.codAvailable ? "Available" : "Not available"}</dd></div>` : ''}
