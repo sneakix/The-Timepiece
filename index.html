@@ -341,7 +341,7 @@
   .search-box{
     position:relative;
     display:flex; align-items:center; gap:9px;
-    background:var(--panel);
+    background:var(--paper);
     border:1.5px solid var(--line);
     border-radius:var(--radius-md);
     padding:12px 14px;
@@ -1419,7 +1419,7 @@
   .item-detail-scroll{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .item-detail-stage{
     position:relative; width:100%; aspect-ratio:1/1; max-height:60vh;
-    background:var(--panel); display:flex; align-items:center; justify-content:center;
+    background:var(--paper); display:flex; align-items:center; justify-content:center;
     overflow:hidden;
   }
   .item-detail-stage img{ width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; cursor:zoom-in; }
@@ -1447,9 +1447,8 @@
   }
   .item-detail-info .add-btn{ margin-top:20px; }
 
-  /* Full spec list (Case Material, Strap Material, Case Size,
-     Water Resistance, Warranty) - simple label/value rows, only rendered
-     for whichever fields actually have a value in the sheet. */
+  /* Full spec list (For/Gender, Case Size) - simple label/value rows,
+     only rendered for whichever fields actually have a value. */
   .spec-list{ margin-top:18px; border-top:1px solid var(--line); }
   .spec-row{
     display:flex; justify-content:space-between; gap:12px;
@@ -1557,7 +1556,7 @@
   .filter-search-wrap{ padding:2px 18px 14px; flex:none; }
   .filter-search-wrap input{
     width:100%; padding:11px 13px; border-radius:var(--radius-sm);
-    border:1.5px solid var(--line); background:var(--panel);
+    border:1.5px solid var(--line); background:var(--paper);
     font-family:inherit; font-size:13.5px; color:var(--ink);
   }
   .filter-search-wrap input:focus{ outline:none; border-color:var(--ink); }
@@ -1725,7 +1724,7 @@
   .field label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:6px; font-weight:700;}
   .field input, .field textarea{
     width:100%; padding:12px 13px; border-radius:var(--radius-sm);
-    border:1.5px solid var(--line); background:var(--panel);
+    border:1.5px solid var(--line); background:var(--paper);
     color:var(--ink); font-size:15px; font-family:inherit;
     transition:border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
   }
@@ -2255,6 +2254,15 @@
         </div></div></div>
       </div>
 
+      <div class="filter-accordion-item" id="filterAccordion-type">
+        <button class="filter-accordion-header" onclick="toggleFilterSection('type')" aria-expanded="false">
+          <h3>Type</h3><span class="chevron">›</span>
+        </button>
+        <div class="filter-accordion-body"><div class="filter-accordion-body-inner"><div class="filter-accordion-content">
+          <div class="filter-chip-row" id="filterTypeRow"></div>
+        </div></div></div>
+      </div>
+
       <div class="filter-accordion-item" id="filterAccordion-brand">
         <button class="filter-accordion-header" onclick="toggleFilterSection('brand')" aria-expanded="false">
           <h3>Brand <span class="filter-hint">(select multiple)</span></h3><span class="chevron">›</span>
@@ -2375,21 +2383,15 @@
                         also feeds the segment chips (see watchSegments())
    Gender           -> Men / Women / Unisex - anything else defaults to
                         Unisex (shown under both) rather than disappearing
-   Case Material    -> free text, shown in the spec list (e.g. "Stainless
-                        Steel", "Titanium")
-   Strap Material   -> free text, shown in the spec list
-   Case Size (mm)   -> numeric, shown in the spec list (no filter is built
-                        for this - it's informational only)
+   Case Size (mm)   -> numeric, shown in the spec list alongside Gender
+                        (no filter is built for this - it's informational
+                        only)
    Price            -> the ACTUAL SELLING PRICE. Always shown prominently,
                         never struck through.
    Market Price     -> optional, higher reference price: shown struck
                         through, and the discount % badge is calculated
                         automatically as ((marketPrice-price)/marketPrice)*100,
                         rounded. Leave blank for no discount.
-   Warranty         -> free text, e.g. "1 Year Manufacturer Warranty",
-                        shown in the spec list
-   Water Resistance -> free text, e.g. "100M", "Not water resistant",
-                        shown in the spec list
    COD Available    -> true/false, shows "Cash on Delivery Available" on
                         the item page - only selected products support COD
    New Arrival      -> true/false, shows "NEW" tag + New Arrivals filter
@@ -2400,7 +2402,9 @@
                         rest appear in the expanded gallery. First is
                         required for a row to appear at all.
    Description      -> free text, rendered as-is (paragraph breaks on
-                        blank lines) on the product detail page.
+                        blank lines) on the product detail page. Also
+                        searched (see getFilteredWatches) - a word only
+                        mentioned in here still surfaces the product.
    Website_Listed   -> "1" or "2" shows the product on the website; "0",
                         blank, or any other value hides it. "2" additionally
                         gets priority placement at the top of the default
@@ -2530,11 +2534,7 @@ function rowsToWatches(rows){
     // rows still have different images.
     const idBasis = explicitId || `${brand}|${name}|${category}|${images[0] || ""}`;
     const price = parseInt(r["Price"], 10) || 0;
-    const caseMaterial = (r["Case Material"] || "").trim();
-    const strapMaterial = (r["Strap Material"] || "").trim();
     const caseSize = (r["Case Size (mm)"] || "").trim();
-    const warranty = (r["Warranty"] || "").trim();
-    const waterResistance = (r["Water Resistance"] || "").trim();
 
     // Description is free text, rendered as-is on the product detail page
     // (paragraph breaks on blank lines) - no tag parsing, no quality-grade
@@ -2549,11 +2549,7 @@ function rowsToWatches(rows){
       category,
       gender,
       price,
-      caseMaterial,
-      strapMaterial,
       caseSize,
-      warranty,
-      waterResistance,
       // "Market Price" is an optional, higher reference price used only to
       // show a strikethrough + compute a discount %. "Price" is ALWAYS the
       // actual selling price shown prominently - it is never struck through.
@@ -3943,11 +3939,9 @@ function setCategory(c){
   updatePageChrome();
 }
 
-// Sizes are gender-specific (Men's EU 41-45/UK 6-10 vs Women's EU 36-40/
-// W 6-10), so switching gender clears any previously-selected sizes that
-// may no longer even appear in the filter sheet. Also resets Type/Brand/
-// Model back to "All" so the shopper always lands on the unfiltered
-// Men's/Women's catalog first, exactly as the homepage cards promise.
+// Switching gender resets Type/Brand/availability/New/Sale back to "All"
+// so the shopper always lands on the unfiltered Men's/Women's catalog
+// first, exactly as the homepage cards promise.
 function setGender(g){
   closeAllOverlays();
   onWelcomePage = false;
@@ -4321,7 +4315,7 @@ function openAccessoriesSection(){
 
 function updateFilterBadge(){
   const priceActive = priceMin > 0 || priceMax < 10000;
-  const count = [activeBrands.size>0, priceActive, activeAvailFilters.size>0, filterNewOnly, filterSaleOnly, activeGender!==null].filter(Boolean).length;
+  const count = [activeCategory!=="All", activeBrands.size>0, priceActive, activeAvailFilters.size>0, filterNewOnly, filterSaleOnly, activeGender!==null].filter(Boolean).length;
   const badge = document.getElementById("filterBadge");
   if(!badge) return;
   if(count > 0){ badge.style.display = "flex"; badge.textContent = count; }
@@ -4346,6 +4340,7 @@ function renderSelectedFilters(){
   // filter chip. Showing them here too was confusing since "removing"
   // one didn't actually leave the page it named.
   activeBrands.forEach(b => chips.push({ label:b, onclick:`removeBrand('${escForInlineJs(b)}')` }));
+  if(activeCategory !== "All") chips.push({ label: activeCategory, onclick:`setCategory('All')` });
   if(activeGender) chips.push({ label: activeGender === "M" ? "Men" : "Women", onclick:`setGenderFilter('All')` });
   if(filterNewOnly) chips.push({ label:"New Arrivals", onclick:`toggleNewOnly()` });
   if(filterSaleOnly) chips.push({ label:"On Sale", onclick:`toggleSaleOnly()` });
@@ -4383,6 +4378,24 @@ function renderFilterSheet(){
     sortOnlyRow.innerHTML = sortOptions.map(([key,label])=>
       `<button class="filter-chip ${activeSort===key?'active':''}" onclick="setSort('${key}'); closeSheet('sortOverlay');">${label}</button>`
     ).join("");
+  }
+
+  // Type: single-select, same underlying segments as the top chip strip
+  // (see renderCategories()/watchSegments()) - picking here calls the
+  // exact same setCategory() the chips use, so both stay in sync no
+  // matter which one you pick from.
+  const typeRow = document.getElementById("filterTypeRow");
+  if(typeRow){
+    const present = new Set();
+    activeCatalog().forEach(s => watchSegments(s).forEach(seg => present.add(normalizeCategoryValue(seg))));
+    const known = CATEGORY_ORDER.filter(c => c !== "All" && [...present].some(p => p.toLowerCase() === c.toLowerCase()));
+    const knownLower = new Set(known.map(c => c.toLowerCase()));
+    const extra = [...present].filter(p => !knownLower.has(p.toLowerCase())).sort((a,b)=>a.localeCompare(b));
+    const types = ["All", ...known, ...extra];
+    typeRow.innerHTML = types.map(t=>{
+      const active = t === "All" ? activeCategory === "All" : normalizeCategoryValue(activeCategory).toLowerCase() === t.toLowerCase();
+      return `<button class="filter-chip ${active?'active':''}" onclick="setCategory('${escForInlineJs(t)}')">${escapeHtml(t)}</button>`;
+    }).join("");
   }
 
   // Brand: multi-select. "All" is active only when nothing is chosen.
@@ -4445,7 +4458,7 @@ function getFilteredWatches(){
     // inside Men's/Women's/any other filter, search stays scoped to it.
     if(searchTerm){
       const availKeywords = watch.codAvailable ? 'cod cash on delivery cash on delivery available' : '';
-      const haystack = `${watch.name} ${watch.brand} ${watch.category} ${availKeywords}`.toLowerCase();
+      const haystack = `${watch.name} ${watch.brand} ${watch.category} ${watch.description} ${availKeywords}`.toLowerCase();
       if(!haystack.includes(searchTerm)) return false;
     }
     if(activeGender && !watchMatchesGender(watch, activeGender)) return false;
@@ -5142,15 +5155,12 @@ function renderItemDetail(){
   else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
   if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
 
-  // Full spec list - only rows with an actual value in the sheet are
-  // shown, so a blank Case Material/Warranty/etc cell just quietly omits
-  // that line rather than showing "Case Material: -".
+  // Full spec list - only rows with an actual value are shown, so a
+  // blank Case Size cell just quietly omits that line.
+  const genderLabel = watch.gender === "W" ? "Her" : watch.gender === "M" ? "Him" : "Everyone";
   const specRows = [
-    ["Case Material", watch.caseMaterial],
-    ["Strap Material", watch.strapMaterial],
+    ["For", genderLabel],
     ["Case Size", watch.caseSize ? `${watch.caseSize}mm` : ""],
-    ["Water Resistance", watch.waterResistance],
-    ["Warranty", watch.warranty],
   ].filter(([, val]) => val);
 
   container.innerHTML = `
@@ -5515,9 +5525,8 @@ function renderComparePage(container){
 
         <dl class="compare-attr-list">
           <div class="compare-attr-row"><dt>Brand</dt><dd>${escapeHtml(s.brand)}</dd></div>
+          <div class="compare-attr-row"><dt>For</dt><dd>${s.gender === "W" ? "Her" : s.gender === "M" ? "Him" : "Everyone"}</dd></div>
           ${s.caseSize ? `<div class="compare-attr-row"><dt>Case Size</dt><dd>${escapeHtml(s.caseSize)}mm</dd></div>` : ''}
-          ${s.waterResistance ? `<div class="compare-attr-row"><dt>Water Resistance</dt><dd>${escapeHtml(s.waterResistance)}</dd></div>` : ''}
-          ${s.warranty ? `<div class="compare-attr-row"><dt>Warranty</dt><dd>${escapeHtml(s.warranty)}</dd></div>` : ''}
           ${showCod ? `<div class="compare-attr-row"><dt>Cash on Delivery</dt><dd>${s.codAvailable ? "Available" : "Not available"}</dd></div>` : ''}
           ${descLines.length ? `<div class="compare-attr-row compare-attr-row--plain"><dd>${descLines.map(l => escapeHtml(l)).join(" · ")}</dd></div>` : ''}
         </dl>
