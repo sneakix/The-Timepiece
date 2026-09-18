@@ -23,14 +23,14 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="THE TIMEPIECE">
 <meta property="og:title" content="THE TIMEPIECE — Timepieces Worth Keeping">
-<meta property="og:description" content="Automatic, quartz and chronograph watches for everyday wear and the occasions that matter.">
+<meta property="og:description" content="More than just time — automatic, quartz and chronograph watches for every moment that matters.">
 <meta property="og:url" content="https://thetimepiece.pages.dev/">
 <meta property="og:image" content="https://thetimepiece.pages.dev/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="THE TIMEPIECE — Timepieces Worth Keeping">
-<meta name="twitter:description" content="Automatic, quartz and chronograph watches for everyday wear and the occasions that matter.">
+<meta name="twitter:description" content="More than just time — automatic, quartz and chronograph watches for every moment that matters.">
 <meta name="twitter:image" content="https://thetimepiece.pages.dev/og-image.jpg">
 
 <script>
@@ -1419,9 +1419,13 @@
   .item-detail-scroll{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .item-detail-stage{
     position:relative; width:100%; aspect-ratio:1/1; max-height:60vh;
-    background:var(--paper); display:flex; align-items:center; justify-content:center;
+    background:#EFEBE1; /* soft neutral mat - deliberately distinct from
+      the page's paper white AND the warm panel tan, so the photo reads as
+      its own framed area instead of blending flush into the page */
+    display:flex; align-items:center; justify-content:center;
     overflow:hidden;
   }
+  .item-detail-thumbs img{ background:#EFEBE1; }
   .item-detail-stage img{ width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; cursor:zoom-in; }
   .item-detail-stage .lightbox-nav{ background:rgba(17,17,17,0.5); }
   .item-detail-stage .lightbox-nav:hover{ background:rgba(17,17,17,0.7); }
@@ -5167,7 +5171,7 @@ function renderItemDetail(){
 
   // Full spec list - only rows with an actual value are shown, so a
   // blank Case Size cell just quietly omits that line.
-  const genderLabel = watch.gender === "W" ? "Her" : watch.gender === "M" ? "Him" : "Everyone";
+  const genderLabel = watch.gender === "W" ? "Her" : watch.gender === "M" ? "Him" : "Unisex";
   const specRows = [
     ["Type", watch.category],
     ["For", genderLabel],
@@ -5537,7 +5541,7 @@ function renderComparePage(container){
         <dl class="compare-attr-list">
           <div class="compare-attr-row"><dt>Brand</dt><dd>${escapeHtml(s.brand)}</dd></div>
           ${s.category ? `<div class="compare-attr-row"><dt>Type</dt><dd>${escapeHtml(s.category)}</dd></div>` : ''}
-          <div class="compare-attr-row"><dt>For</dt><dd>${s.gender === "W" ? "Her" : s.gender === "M" ? "Him" : "Everyone"}</dd></div>
+          <div class="compare-attr-row"><dt>For</dt><dd>${s.gender === "W" ? "Her" : s.gender === "M" ? "Him" : "Unisex"}</dd></div>
           ${s.caseSize ? `<div class="compare-attr-row"><dt>Case Size</dt><dd>${escapeHtml(s.caseSize)}mm</dd></div>` : ''}
           ${showCod ? `<div class="compare-attr-row"><dt>Cash on Delivery</dt><dd>${s.codAvailable ? "Available" : "Not available"}</dd></div>` : ''}
           ${descLines.length ? `<div class="compare-attr-row compare-attr-row--plain"><dd>${descLines.map(l => escapeHtml(l)).join(" · ")}</dd></div>` : ''}
