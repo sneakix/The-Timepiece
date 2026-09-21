@@ -2437,7 +2437,7 @@ function trackEvent(name, params){
     if(typeof gtag === "function") gtag('event', name, params || {});
   } catch(e){ /* analytics should never break the site */ }
 }
-const FACEBOOK_URL = "https://facebook.com/thetimepiece"; // <-- TODO: replace with your actual Page URL
+const FACEBOOK_URL = "https://facebook.com/thetimepiece/";
 const INSTAGRAM_URL = "https://instagram.com/thetimepiece__";
 
 // This is NOT your Google Sheet's own CSV link - it's the URL of the
@@ -3597,7 +3597,7 @@ function watchMatchesGender(watch, g){
 // appear in this order rather than the sheet's order. A Category value
 // not on this list still works for filtering - it just sorts to the end
 // (see the .sort() fallback in renderCategories()).
-const CATEGORY_ORDER = ["All", "Analog", "Digital", "Chronograph", "Smartwatch", "Automatic", "Mechanical", "Quartz"];
+const CATEGORY_ORDER = ["All", "Analog", "Digital", "Analog-Digital", "Chronograph", "Smartwatch", "Automatic", "Mechanical", "Quartz"];
 
 // One representative photo per segment, used by the image-card picker.
 // Falls back to a plain text chip (no image) for any segment without an
@@ -3606,6 +3606,7 @@ const CATEGORY_ORDER = ["All", "Analog", "Digital", "Chronograph", "Smartwatch",
 const CATEGORY_IMAGES = {
   Analog: "images/seg-analog.jpg",
   Digital: "images/seg-digital.jpg",
+  "Analog-Digital": "images/seg-analog-digital.jpg",
   Chronograph: "images/seg-chronograph.jpg",
   Smartwatch: "images/seg-smartwatch.jpg",
   Automatic: "images/seg-automatic.jpg",
