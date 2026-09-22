@@ -923,7 +923,7 @@
 
   /* Small Men's/Women's tiles shown above the grid, All Products view only */
   .ap-gender-tiles{
-    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
     padding:14px 16px 4px;
   }
   .ap-gender-tile{
@@ -1936,6 +1936,7 @@
   <button class="secondary-nav-btn" id="navAllBtn" onclick="showAllProducts()">Shop</button>
   <button class="secondary-nav-btn" id="navMensBtn" onclick="selectGenderCategory('mens')">Men's</button>
   <button class="secondary-nav-btn" id="navWomensBtn" onclick="selectGenderCategory('womens')">Women's</button>
+  <button class="secondary-nav-btn" id="navUnisexBtn" onclick="selectGenderCategory('unisex')">Unisex</button>
   <button class="secondary-nav-btn" id="navOffersBtn" onclick="goToOffers()">Offers</button>
   <button class="secondary-nav-btn" id="navPremiumBtn" onclick="selectPriceTierHero('premium3000')">Premium</button>
   <button class="secondary-nav-btn nav-accessories-link" id="navAccessoriesBtn" onclick="openAccessoriesSection()" style="display:none">Spectacles &amp; Accessories</button>
@@ -2009,6 +2010,10 @@
       <img src="images/hero-womens.jpg" alt="Woman wearing a slim analog watch with a leather strap">
       <div class="gender-card-overlay"><span class="gender-card-label">Women's Watches</span></div>
     </button>
+    <button class="gender-card gender-card-wide" onclick="selectGenderCategory('unisex')" aria-label="Shop Unisex Watches">
+      <img src="images/hero-unisex.jpg" alt="Unisex watch suited for anyone">
+      <div class="gender-card-overlay"><span class="gender-card-label">Unisex Watches</span></div>
+    </button>
   </div>
 
   <h2 class="featured-heading">Featured</h2>
@@ -2048,6 +2053,10 @@
     <img src="images/hero-womens.jpg" alt="Woman wearing a slim analog watch with a leather strap" loading="lazy">
     <div class="ap-gender-tile-overlay"><span class="ap-gender-tile-label">Women's</span></div>
   </button>
+  <button class="ap-gender-tile" onclick="selectGenderCategory('unisex')" aria-label="Shop Unisex Watches">
+    <img src="images/hero-unisex.jpg" alt="Unisex watch suited for anyone" loading="lazy">
+    <div class="ap-gender-tile-overlay"><span class="ap-gender-tile-label">Unisex</span></div>
+  </button>
 </div>
 <div class="offers-tier-strip" id="offersTierStrip" style="display:none"></div>
 <div class="cat-strip" id="catStrip" role="group" aria-label="Categories"></div>
@@ -2083,6 +2092,7 @@
       <button onclick="goToOffers()">Offers</button>
       <button onclick="selectGenderCategory('mens')">Men's</button>
       <button onclick="selectGenderCategory('womens')">Women's</button>
+      <button onclick="selectGenderCategory('unisex')">Unisex</button>
       <button onclick="selectPriceTierHero('premium3000')">Premium</button>
       <button onclick="openPoliciesPage()">Terms &amp; Policy</button>
       <a href="#" id="footerContactUs" target="_blank" rel="noopener">Contact Us</a>
@@ -2119,6 +2129,7 @@
     <button class="hamburger-link" onclick="closeHamburger(); showAllProducts();">Shop</button>
     <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('mens')">Men's Watches</button>
     <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('womens')">Women's Watches</button>
+    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('unisex')">Unisex Watches</button>
     <button class="hamburger-link" onclick="closeHamburger(); goToOffers();">Offers</button>
     <button class="hamburger-link" onclick="closeHamburger(); selectPriceTierHero('premium3000')">Premium</button>
     <button class="hamburger-link nav-accessories-link" onclick="openAccessoriesSection()" style="display:none">Spectacles &amp; Accessories</button>
@@ -3706,6 +3717,7 @@ function updateSecondaryNavActiveOnly(){
   const navAll = document.getElementById("navAllBtn");
   const navMens = document.getElementById("navMensBtn");
   const navWomens = document.getElementById("navWomensBtn");
+  const navUnisex = document.getElementById("navUnisexBtn");
   const navPremium = document.getElementById("navPremiumBtn");
   const navOffers = document.getElementById("navOffersBtn");
   const navAccessories = document.getElementById("navAccessoriesBtn");
@@ -3715,6 +3727,7 @@ function updateSecondaryNavActiveOnly(){
   if(navAll) navAll.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === null && activeFilter === "all");
   if(navMens) navMens.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === "M");
   if(navWomens) navWomens.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === "W");
+  if(navUnisex) navUnisex.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === "MW");
   if(navPremium) navPremium.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeFilter === "premium3000");
   if(navOffers) navOffers.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && ["offers","under1000","under1500","under2000","seasonal"].includes(activeFilter));
   if(navAccessories) navAccessories.classList.toggle("active", !suppressActive && !onWelcomePage && activeSection === "accessories");
@@ -3810,6 +3823,8 @@ function buildSectionBreadcrumbSegs(){
     segs.push({ label:"Men's", onclick:"selectGenderCategory('mens')" });
   } else if(activeGender === "W"){
     segs.push({ label:"Women's", onclick:"selectGenderCategory('womens')" });
+  } else if(activeGender === "MW"){
+    segs.push({ label:"Unisex", onclick:"selectGenderCategory('unisex')" });
   } else if(activeFilter === "premium3000"){
     segs.push({ label:"Premium", onclick:"selectPriceTierHero('premium3000')" });
   } else if(activeFilter === "offers"){
@@ -3886,6 +3901,7 @@ function viewKeyAndHash(){
   if(onWelcomePage) return { key: null, hash: "" };
   if(activeGender === "M") return { key: "mens", hash: "#mens" };
   if(activeGender === "W") return { key: "womens", hash: "#womens" };
+  if(activeGender === "MW") return { key: "unisex", hash: "#unisex" };
   if(activeFilter === "premium3000") return { key: "premium", hash: "#premium" };
   if(activeFilter === "offers") return { key: "offers", hash: "#offers" };
   if(activeFilter === "under1000") return { key: "offers1000", hash: "#offers-1000" };
@@ -3920,6 +3936,7 @@ function applyViewFromHash(hash){
   suppressViewHashPush = true;
   if(hash === "#mens") selectGenderCategory("mens");
   else if(hash === "#womens") selectGenderCategory("womens");
+  else if(hash === "#unisex") selectGenderCategory("unisex");
   else if(hash === "#premium") selectPriceTierHero("premium3000");
   else if(hash === "#offers") selectPriceTierHero("offers");
   else if(hash === "#offers-1000") selectPriceTierHero("under1000");
@@ -3976,7 +3993,7 @@ function setGender(g){
 // Entry point for the two large homepage cards, and for the "Men's
 // Watches"/"Women's Watches" links in the hamburger menu.
 function selectGenderCategory(gender){
-  setGender(gender === "womens" ? "W" : "M");
+  setGender(gender === "womens" ? "W" : gender === "unisex" ? "MW" : "M");
 }
 
 // Drops back to the unisex "All" view without touching type/brand/size
