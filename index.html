@@ -1324,6 +1324,15 @@
   }
   .heart-toggle-btn:active{ transform:scale(0.82); }
   .heart-toggle-btn.active{ color:var(--sale); }
+  .card-actions{ display:flex; align-items:center; gap:12px; flex:none; }
+  .wa-icon-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; flex:none; color:var(--success-ink);
+    transition:transform var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
+  }
+  .wa-icon-btn .wa-ico{ width:20px; height:20px; }
+  .wa-icon-btn:hover{ filter:brightness(0.9); }
+  .wa-icon-btn:active{ transform:scale(0.82); }
 
   .saved-line{ display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); align-items:center; }
   .saved-line img{ width:58px; height:58px; object-fit:cover; border-radius:8px; background:#eee; flex:none; cursor:pointer; }
@@ -2000,6 +2009,18 @@
     </div>
   </section>
 
+  <!-- Spectacles & Accessories hero: reuses the "nav-accessories-link"
+       class so updateAccessoriesNavVisibility() (called whenever the
+       accessories sheet loads) shows/hides this in lockstep with the
+       nav/hamburger links above - hidden whenever hasAccessories is
+       false (i.e. ACCESSORY_SHEETS isn't configured yet, or the sheet
+       has zero listed rows), shown automatically the moment it does.
+       To reskin, just replace images/hero-accessories.jpg. -->
+  <button class="offer-seasonal-banner nav-accessories-link" style="display:none" onclick="openAccessoriesSection()" aria-label="Shop Spectacles &amp; Accessories">
+    <img class="offer-seasonal-banner-img" src="images/hero-accessories.jpg" alt="" onerror="this.remove()">
+    <span class="offer-seasonal-banner-label">Spectacles<br>&amp; Accessories</span>
+  </button>
+
   <h2 class="welcome-gender-heading">Shop by Category</h2>
   <div class="welcome-gender-stack">
     <button class="gender-card gender-card-wide" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Watches">
@@ -2438,6 +2459,40 @@
    ========================================================= */
 const WHATSAPP_NUMBER = "911234567890"; // <-- TODO: replace with your real WhatsApp number, country code + number, no + or spaces
 const SITE_URL = "https://thetimepiece.pages.dev/"; // <-- update again if you move to a custom domain
+
+// Per-card "WhatsApp Enquiry" button (the small icon on each product card,
+// separate from the full checkout-cart WhatsApp flow used elsewhere in
+// this file). Built and ready to go, but switched OFF for now since
+// WHATSAPP_NUMBER above is still the placeholder - a live enquiry button
+// pointing at a fake number would be worse than no button at all.
+// Once a real WhatsApp number is set above: flip this to true. Nothing
+// else needs to change - it's already wired into every product card.
+const WHATSAPP_ENQUIRY_ENABLED = false;
+
+const WA_ICON_SVG = '<svg class="wa-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+// Builds the click-to-chat link for the "WhatsApp Enquiry" button. Every
+// value comes from the product being viewed (name/price from WATCHES,
+// link from the same SITE_URL + #watch-<id> format the cart uses), so
+// it's correct for every product - including ones added to the sheet
+// later. The whole message goes through encodeURIComponent so spaces,
+// ₹, &, #, quotes, etc. can't break the link.
+function buildWhatsAppEnquiryUrl(watch){
+  const link = `${SITE_URL}#watch-${watch.id}`;
+  let msg = `Hi, I'm interested in this watch:\nProduct: ${watch.name}\n`;
+  if(watch.price) msg += `Price: ₹${watch.price.toLocaleString("en-IN")}\n`;
+  msg += `Link: ${link}\n\nIs this available?`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
+// Returns "" (nothing rendered) while WHATSAPP_ENQUIRY_ENABLED is false -
+// see the comment on that flag above for how to turn this on.
+function waCardBtnHtml(watch){
+  if(!WHATSAPP_ENQUIRY_ENABLED) return "";
+  return `<a class="wa-icon-btn" href="${escapeHtml(buildWhatsAppEnquiryUrl(watch))}" target="_blank" rel="noopener noreferrer"
+    onclick="event.stopPropagation(); trackEvent('whatsapp_enquiry', { item_id: ${watch.id}, location: 'card' })"
+    onkeydown="event.stopPropagation()"
+    aria-label="Enquire about ${escapeHtml(watch.name)} on WhatsApp" title="WhatsApp Enquiry">${WA_ICON_SVG}</a>`;
+}
 
 // ---------- Analytics event tracking (GA4) ----------
 // Sends custom events to Google Analytics so you can see what customers
@@ -3455,6 +3510,7 @@ function handleSearchOverlaySuggestClick(e){
   const input = document.getElementById("searchOverlayInput");
   input.value = item.dataset.value;
   hideSuggestDropdown("searchOverlaySuggest");
+  input.blur(); // close the on-screen keyboard - tapping a suggestion is as much a "submit" as pressing Enter
   submitSearchOverlay();
 }
 
@@ -3464,7 +3520,9 @@ function handleShopSuggestClick(e){
   const input = document.getElementById("searchInput");
   input.value = item.dataset.value;
   hideSuggestDropdown("shopSearchSuggest");
+  input.blur(); // close the on-screen keyboard - tapping a suggestion is as much a "submit" as pressing Enter
   onSearch();
+  scrollToSearchResults();
 }
 
 // Enter always searches exactly what's typed - it never silently swaps
@@ -3476,12 +3534,21 @@ function handleSearchOverlayKeydown(e){
   e.preventDefault();
   hideSuggestDropdown("searchOverlaySuggest");
   submitSearchOverlay();
+  // preventDefault() above stops type="search" inputs' own submit behaviour,
+  // which is what would otherwise close the on-screen keyboard - so without
+  // this the keyboard is left open after tapping the keyboard's search key.
+  e.target.blur();
 }
 
 function handleShopSearchKeydown(e){
   if(e.key !== "Enter") return;
   e.preventDefault();
   hideSuggestDropdown("shopSearchSuggest");
+  // preventDefault() above stops type="search" inputs' own submit behaviour,
+  // which is what would otherwise close the on-screen keyboard - so without
+  // this the keyboard is left open after tapping the keyboard's search key.
+  e.target.blur();
+  scrollToSearchResults();
 }
 
 function renderFilterStrip(){
@@ -4005,9 +4072,20 @@ function clearGenderFilter(){
   updateGenderHeroVisibility();
 }
 
+// Scrolls the search bar (and the results grid right under it) to the top
+// of the screen, so the hero banner / category tiles above it scroll out
+// of the way. Without this, typing a search only updates the grid further
+// down the page - on a phone, with the keyboard open too, that leaves the
+// visible area unchanged and makes it look like nothing happened.
+function scrollToSearchResults(){
+  const anchor = document.getElementById("searchWrap") || document.getElementById("grid");
+  if(anchor) anchor.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
 let searchRenderTimer = null;
 let searchTrackTimer = null;
 function onSearch(){
+  const justStartedSearching = !searchTerm;
   searchTerm = document.getElementById("searchInput").value.trim().toLowerCase();
   currentPage = 1;
 
@@ -4020,6 +4098,10 @@ function onSearch(){
   searchRenderTimer = setTimeout(() => {
     renderGrid();
     updateGenderHeroVisibility();
+    // Only the moment the search box goes from empty to non-empty - not
+    // every keystroke after that - so a shopper who's scrolled down to
+    // compare results isn't yanked back up each time they refine the term.
+    if(justStartedSearching && searchTerm) scrollToSearchResults();
   }, 150);
 
   // Debounced: only log once the customer pauses typing for a bit, not on
@@ -4261,6 +4343,10 @@ function submitSearchOverlay(){
   renderGrid();
   updateGenderHeroVisibility();
   closeSearchOverlay();
+  // Runs after showAllProducts()'s own top-of-page scroll above (when this
+  // came from Home) so this is the scroll position that actually sticks -
+  // landing on the results instead of the hero/category tiles above them.
+  scrollToSearchResults();
 }
 
 function openHomeFilters(){
@@ -4576,12 +4662,7 @@ function goToPage(p){
   if(p < 1 || p === currentPage) return;
   currentPage = p;
   renderGrid();
-  // Scroll to the search bar rather than the absolute top of the page -
-  // the shopper just paged forward within the same listing, so jumping
-  // past the hero/category chips back to the very top would be jarring;
-  // landing at the search bar keeps them oriented right above the grid.
-  const anchor = document.getElementById("searchWrap") || document.getElementById("grid");
-  anchor.scrollIntoView({ behavior:"smooth", block:"start" });
+  scrollToSearchResults();
 }
 
 // Warms the browser's cache for the *next* "Show More" batch - so when the
@@ -4686,11 +4767,14 @@ function renderGrid(){
         <div class="body">
           <div class="brand-row">
             <div class="brand">${escapeHtml(watch.brand)}</div>
-            <button class="heart-toggle-btn ${savedIds.includes(watch.id) ? 'active' : ''}" id="heartBtnGrid-${watch.id}"
-              onclick="event.stopPropagation(); toggleSaved(${watch.id})"
-              aria-label="${savedIds.includes(watch.id) ? 'Remove from saved' : 'Save for comparison'}" aria-pressed="${savedIds.includes(watch.id)}">
-              <span aria-hidden="true">${heartGlyph(savedIds.includes(watch.id))}</span>
-            </button>
+            <div class="card-actions">
+              <button class="heart-toggle-btn ${savedIds.includes(watch.id) ? 'active' : ''}" id="heartBtnGrid-${watch.id}"
+                onclick="event.stopPropagation(); toggleSaved(${watch.id})"
+                aria-label="${savedIds.includes(watch.id) ? 'Remove from saved' : 'Save for comparison'}" aria-pressed="${savedIds.includes(watch.id)}">
+                <span aria-hidden="true">${heartGlyph(savedIds.includes(watch.id))}</span>
+              </button>
+              ${waCardBtnHtml(watch)}
+            </div>
           </div>
           <div class="name">${escapeHtml(watch.name)}</div>
           <div class="price-row">
@@ -4766,11 +4850,14 @@ function renderHomeFeatured(){
         <div class="body">
           <div class="brand-row">
             <div class="brand">${escapeHtml(watch.brand)}</div>
-            <button class="heart-toggle-btn ${savedIds.includes(watch.id) ? 'active' : ''}" id="heartBtnHome-${watch.id}"
-              onclick="event.stopPropagation(); toggleSaved(${watch.id})"
-              aria-label="${savedIds.includes(watch.id) ? 'Remove from saved' : 'Save for comparison'}" aria-pressed="${savedIds.includes(watch.id)}">
-              <span aria-hidden="true">${heartGlyph(savedIds.includes(watch.id))}</span>
-            </button>
+            <div class="card-actions">
+              <button class="heart-toggle-btn ${savedIds.includes(watch.id) ? 'active' : ''}" id="heartBtnHome-${watch.id}"
+                onclick="event.stopPropagation(); toggleSaved(${watch.id})"
+                aria-label="${savedIds.includes(watch.id) ? 'Remove from saved' : 'Save for comparison'}" aria-pressed="${savedIds.includes(watch.id)}">
+                <span aria-hidden="true">${heartGlyph(savedIds.includes(watch.id))}</span>
+              </button>
+              ${waCardBtnHtml(watch)}
+            </div>
           </div>
           <div class="name">${escapeHtml(watch.name)}</div>
           <div class="price-row">
@@ -5145,11 +5232,14 @@ function renderSimilarProductsHtml(watch){
               <div class="body">
                 <div class="brand-row">
                   <div class="brand">${escapeHtml(s.brand)}</div>
-                  <button class="heart-toggle-btn ${savedIds.includes(s.id) ? 'active' : ''}" id="heartBtnSimilar-${s.id}"
-                    onclick="event.stopPropagation(); toggleSaved(${s.id})"
-                    aria-label="${savedIds.includes(s.id) ? 'Remove from saved' : 'Save for comparison'}" aria-pressed="${savedIds.includes(s.id)}">
-                    <span aria-hidden="true">${heartGlyph(savedIds.includes(s.id))}</span>
-                  </button>
+                  <div class="card-actions">
+                    <button class="heart-toggle-btn ${savedIds.includes(s.id) ? 'active' : ''}" id="heartBtnSimilar-${s.id}"
+                      onclick="event.stopPropagation(); toggleSaved(${s.id})"
+                      aria-label="${savedIds.includes(s.id) ? 'Remove from saved' : 'Save for comparison'}" aria-pressed="${savedIds.includes(s.id)}">
+                      <span aria-hidden="true">${heartGlyph(savedIds.includes(s.id))}</span>
+                    </button>
+                    ${waCardBtnHtml(s)}
+                  </div>
                 </div>
                 <div class="name">${escapeHtml(s.name)}</div>
                 <div class="price-row">
