@@ -802,18 +802,21 @@
   @media(min-width:1280px){ .welcome-gender-heading{ max-width:960px; margin:0 auto; } }
 
   .welcome-gender-stack{
-    display:flex; flex-wrap:wrap; flex-direction:row; gap:10px;
+    display:flex; flex-direction:row; gap:10px;
+    overflow-x:auto; scrollbar-width:none; padding-bottom:4px;
     padding:12px 16px 20px;
   }
+  .welcome-gender-stack::-webkit-scrollbar{ display:none; }
   @media(min-width:640px){ .welcome-gender-stack{ padding:14px 22px 26px; gap:18px; } }
   @media(min-width:1280px){ .welcome-gender-stack{ max-width:960px; margin:0 auto; width:100%; } }
-  /* Below 640px: 2 cards per row (grow:0 so a lone 3rd card on its own
-     row keeps the same width as the two above it, instead of stretching
-     to fill the row) - keeps every card at the width the label font
-     sizes below were actually tuned for. From 640px up there's enough
-     room for all 3 side by side without anything looking cramped. */
-  .gender-card-wide{ aspect-ratio:4/5; flex:0 1 calc(50% - 5px); min-width:0; }
-  @media(min-width:640px){ .gender-card-wide{ flex:1 1 0%; } }
+  /* Same swipeable-strip treatment as .offers-strip above, rather than
+     shrinking every card to fit 3 across (or wrapping) as more gender
+     sections get added - each card keeps a fixed, legible width and a
+     peek of the next one invites the swipe. From 640px up there's room
+     to just show all of them at full size side by side instead. */
+  .gender-card-wide{ aspect-ratio:4/5; flex:none; width:70%; max-width:240px; }
+  @media(min-width:480px){ .gender-card-wide{ width:55%; } }
+  @media(min-width:640px){ .gender-card-wide{ flex:1 1 0%; width:auto; max-width:none; } }
 
   /* Row layout halves each card's width vs. the old full-width stack, so
      the label (originally sized for a full-width card) is scaled down at
