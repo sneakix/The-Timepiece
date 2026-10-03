@@ -2531,10 +2531,13 @@ let WATCHES = [];
 // simply skipped, no error, no placeholder rows. The "Spectacles &
 // Accessories" nav link only appears once at least one of these actually
 // returns listed rows (see hasAccessories, set in applyAccessoryRows()).
+// One sheet for every accessory - Spectacle / Belt / Chain / Other etc.
+// all live in the same sheet, distinguished by the Category column
+// (exactly like Analog/Chronograph/Automatic already distinguish watches)
+// rather than by separate sheets per type. Paste the published CSV URL
+// below once it's ready.
 const ACCESSORY_SHEETS = [
-  { type: "Spectacles", csvUrl: "" },
-  { type: "Belts", csvUrl: "" },
-  { type: "Chains", csvUrl: "" },
+  { type: "Accessories", csvUrl: "https://thetimepiece-accessories-cache.zorvex-support.workers.dev/" },
 ];
 let ACCESSORIES = [];
 let hasAccessories = false;
