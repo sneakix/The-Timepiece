@@ -509,7 +509,7 @@
   .pill.active{ background:var(--ink); color:var(--paper); }
   .pill.active:hover{ background:var(--ink-soft); }
 
-  /* ---------- Homepage hero banner: background image, Shop/Offers CTAs
+  /* ---------- Homepage hero banner: background image, Shop CTA
      overlaid bottom-left over a bottom gradient for legibility ---------- */
   .home-hero-banner{
     position:relative; width:100%; overflow:hidden;
@@ -539,8 +539,6 @@
   .home-hero-btn:active{ transform:scale(0.96); }
   .home-hero-btn-shop{ background:var(--gold); border-color:var(--gold); color:#fff; }
   .home-hero-btn-shop:hover{ filter:brightness(0.92); }
-  .home-hero-btn-offers{ background:transparent; border-color:rgba(255,255,255,0.7); color:#fff; }
-  .home-hero-btn-offers:hover{ background:rgba(255,255,255,0.12); }
 
   /* ---------- Homepage gender hero cards ---------- */
   .gender-hero{
@@ -686,18 +684,18 @@
   .breadcrumb-current{ font-weight:800; color:var(--ink); }
   .breadcrumb-sep{ color:var(--muted); font-size:11px; }
 
-  /* ---------- Welcome Page: Offers section ---------- */
-  .offers-section{ padding:18px 16px 4px; }
-  @media(min-width:1280px){ .offers-section{ max-width:1200px; margin:0 auto; } }
-  .offers-heading{
+  /* ---------- Welcome Page: Products section ---------- */
+  .home-cat-section{ padding:18px 16px 4px; }
+  @media(min-width:1280px){ .home-cat-section{ max-width:1200px; margin:0 auto; } }
+  .home-cat-heading{
     font-family:"Cormorant Garamond",Georgia,serif; font-weight:600; font-style:italic;
     font-size:29px; letter-spacing:0; text-transform:none; color:var(--ink);
     margin:0 0 12px;
   }
-  .offers-strip{
+  .home-cat-strip{
     display:flex; gap:12px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px;
   }
-  .offers-strip::-webkit-scrollbar{ display:none; }
+  .home-cat-strip::-webkit-scrollbar{ display:none; }
   .offer-card{
     position:relative; overflow:hidden;
     flex:none; width:62%; max-width:220px;
@@ -708,7 +706,7 @@
     transition:transform var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease);
   }
   @media(min-width:640px){ .offer-card{ max-width:260px; } }
-  @media(min-width:1024px){ .offer-card{ max-width:300px; } .offers-strip{ gap:16px; } }
+  @media(min-width:1024px){ .offer-card{ max-width:300px; } .home-cat-strip{ gap:16px; } }
   @media(min-width:1280px){ .offer-card{ max-width:340px; } }
   .offer-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-3); }
   .offer-card:active{ transform:scale(0.97); }
@@ -727,6 +725,8 @@
     font-size:25px; line-height:1.2; letter-spacing:0; text-transform:none; text-align:center;
     text-shadow:0 2px 8px rgba(0,0,0,0.35);
   }
+  /* Homepage category cards reuse the .offer-card shape/label/image styles. */
+  .offer-card.home-cat-card{ background:linear-gradient(135deg, #161616 0%, #3a3a3a 100%); }
   .offer-card.offer-1000{ background:linear-gradient(135deg, #c0281f 0%, #ff6a3d 100%); }
   .offer-card.offer-1500{ background:linear-gradient(135deg, #7a1616 0%, #b8860b 100%); }
   .offer-card.offer-2000{ background:linear-gradient(135deg, #161616 0%, #3a3a3a 100%); }
@@ -809,7 +809,7 @@
   .welcome-gender-stack::-webkit-scrollbar{ display:none; }
   @media(min-width:640px){ .welcome-gender-stack{ padding:14px 22px 26px; gap:18px; } }
   @media(min-width:1280px){ .welcome-gender-stack{ max-width:960px; margin:0 auto; width:100%; } }
-  /* Same swipeable-strip treatment as .offers-strip above, rather than
+  /* Same swipeable-strip treatment as .home-cat-strip above, rather than
      shrinking every card to fit 3 across (or wrapping) as more gender
      sections get added - each card keeps a fixed, legible width and a
      peek of the next one invites the swipe. From 640px up there's room
@@ -930,10 +930,16 @@
     padding:18px 16px 0; margin:0;
   }
 
-  /* Small Men's/Women's tiles shown above the grid, All Products view only */
+  /* Men's/Women's/Unisex tiles: one swipeable row above the grid, All Watches view only */
   .ap-gender-tiles{
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
+    display:flex; gap:10px; overflow-x:auto; scrollbar-width:none;
     padding:14px 16px 4px;
+  }
+  .ap-gender-tiles::-webkit-scrollbar{ display:none; }
+  .ap-gender-tiles .ap-gender-tile{ flex:none; width:42%; max-width:200px; }
+  /* From 640px up the three tiles just share the row evenly. */
+  @media(min-width:640px){
+    .ap-gender-tiles .ap-gender-tile{ flex:1 1 0%; width:auto; max-width:none; aspect-ratio:16/9; }
   }
   .ap-gender-tile{
     position:relative; display:block; border:none; padding:0; margin:0; cursor:pointer;
@@ -1236,6 +1242,13 @@
     transition:color var(--dur-fast) var(--ease);
   }
   .hamburger-link.no-border{ border-bottom:none; }
+  .hamburger-accordion-toggle{ justify-content:space-between; }
+  .hamburger-accordion-arrow{
+    display:inline-block; font-size:12px; transition:transform var(--dur-fast) var(--ease);
+  }
+  .hamburger-accordion-toggle[aria-expanded="true"] .hamburger-accordion-arrow{ transform:rotate(180deg); }
+  .hamburger-submenu{ display:flex; flex-direction:column; }
+  .hamburger-sublink{ padding-left:24px; font-weight:600; font-size:13.5px; }
   .hamburger-cat-chip.no-border{ border-bottom:none; }
   .hamburger-link .ico{ flex:none; font-size:16px; }
   .hamburger-link:hover{ color:var(--gold); }
@@ -1951,13 +1964,12 @@
 <nav class="secondary-nav" id="secondaryNav" aria-label="Quick navigation">
   <button class="secondary-nav-btn secondary-nav-back collapsed" id="navBackBtn" onclick="navBackClick()" aria-label="Back">‹ Back</button>
   <button class="secondary-nav-btn" id="navHomeBtn" onclick="goHome()">Home</button>
-  <button class="secondary-nav-btn" id="navAllBtn" onclick="showAllProducts()">Shop</button>
-  <button class="secondary-nav-btn" id="navMensBtn" onclick="selectGenderCategory('mens')">Men's</button>
-  <button class="secondary-nav-btn" id="navWomensBtn" onclick="selectGenderCategory('womens')">Women's</button>
-  <button class="secondary-nav-btn" id="navUnisexBtn" onclick="selectGenderCategory('unisex')">Unisex</button>
-  <button class="secondary-nav-btn" id="navOffersBtn" onclick="goToOffers()">Offers</button>
-  <button class="secondary-nav-btn" id="navPremiumBtn" onclick="selectPriceTierHero('premium3000')">Premium</button>
-  <button class="secondary-nav-btn nav-accessories-link" id="navAccessoriesBtn" onclick="openAccessoriesSection()" style="display:none">Spectacles &amp; Accessories</button>
+  <button class="secondary-nav-btn" id="navAllBtn" onclick="showAllProducts()">Watches</button>
+  <!-- One button per distinct Category value actually present in the
+       Accessories sheet (Spectacles/Bags/Belts/...) - filled in by
+       updateAccessoryCategoryNav() whenever that sheet loads/changes.
+       Empty and takes up no space until then. -->
+  <span id="navAccessoryCatBtns" style="display:contents"></span>
 </nav>
 
 <nav class="breadcrumb" id="breadcrumbNav" aria-label="Breadcrumb" style="display:none"></nav>
@@ -1982,55 +1994,27 @@
     <img src="images/home-hero-banner.jpg" alt="" onerror="this.remove()">
     <div class="home-hero-ctas">
       <button class="home-hero-btn home-hero-btn-shop" onclick="showAllProducts()">Shop</button>
-      <button class="home-hero-btn home-hero-btn-offers" onclick="goToOffers()">Offers</button>
     </div>
   </div>
-  <section class="offers-section" id="offersSection">
-    <h2 class="offers-heading">Offers</h2>
-
-    <!-- Special Offers: hidden by default, JS shows it only when at
-         least one product has "Seasonal Sale" = TRUE in the sheet (see
-         updateSeasonalCardVisibility). To run a seasonal sale: flag the
-         products in the sheet and this banner appears automatically; clear
-         the flags and it disappears automatically. To reskin it for a
-         new festival, just replace images/seasonal-sale.jpg and edit
-         the label text below - no other changes needed. Homepage-only
-         wide banner treatment; the Offers page's own tier strip keeps
-         its separate compact seasonal card (.offer-card-compact), untouched. -->
-    <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')" aria-label="Shop Onam Special Offer">
-      <img class="offer-seasonal-banner-img" src="images/seasonal-sale.jpg" alt="" onerror="this.remove()">
-      <span class="offer-seasonal-banner-label">Onam<br>Special Offer</span>
-    </button>
-
-    <div class="offers-strip">
-      <button class="offer-card offer-1000" onclick="selectPriceTierHero('under1000')" aria-label="Get a watch under 1000 rupees">
-        <img class="offer-card-img" src="images/hero-sale.jpg" alt="" onerror="this.remove()">
-        <span class="offer-card-label">Get a watch<br>under &#8377;1,000</span>
+  <!-- Products: one card per product type, just under the hero.
+       Watches is fixed; the accessory cards (Spectacles/Belts/Bags/...)
+       are generated from the Category values actually in the Accessories
+       sheet by updateAccessoryCategoryNav(). Spectacles/Belts/Bags are
+       permanent (ACCESSORY_DEFAULT_CATEGORIES). Card photos: drop
+       images/cat-<category>.jpg (lowercase, dashes) - no photo just
+       shows the dark gradient with the label. -->
+  <section class="home-cat-section" id="homeCategories">
+    <h2 class="home-cat-heading">Products</h2>
+    <div class="home-cat-strip">
+      <button class="offer-card home-cat-card" onclick="showAllProducts()" aria-label="Shop Watches">
+        <img class="offer-card-img" src="images/cat-watches.jpg" data-fb="images/hero-mens.jpg" alt="" onerror="if(this.dataset.fb&&!this.dataset.t){this.dataset.t=1;this.src=this.dataset.fb}else{this.remove()}">
+        <span class="offer-card-label">Watches</span>
       </button>
-      <button class="offer-card offer-1500" onclick="selectPriceTierHero('under1500')" aria-label="Get a watch under 1500 rupees">
-        <img class="offer-card-img" src="images/offer-1500.jpg" alt="" onerror="this.remove()">
-        <span class="offer-card-label">Get a watch<br>under &#8377;1,500</span>
-      </button>
-      <button class="offer-card offer-2000" onclick="selectPriceTierHero('under2000')" aria-label="Get a watch under 2000 rupees">
-        <img class="offer-card-img" src="images/offer-2000.jpg" alt="" onerror="this.remove()">
-        <span class="offer-card-label">Get a watch<br>under &#8377;2,000</span>
-      </button>
+      <span id="homeAccessoryCatCards" style="display:contents"></span>
     </div>
   </section>
 
-  <!-- Spectacles & Accessories hero: reuses the "nav-accessories-link"
-       class so updateAccessoriesNavVisibility() (called whenever the
-       accessories sheet loads) shows/hides this in lockstep with the
-       nav/hamburger links above - hidden whenever hasAccessories is
-       false (i.e. ACCESSORY_SHEETS isn't configured yet, or the sheet
-       has zero listed rows), shown automatically the moment it does.
-       To reskin, just replace images/hero-accessories.jpg. -->
-  <button class="offer-seasonal-banner nav-accessories-link" style="display:none" onclick="openAccessoriesSection()" aria-label="Shop Spectacles &amp; Accessories">
-    <img class="offer-seasonal-banner-img" src="images/hero-accessories.jpg" alt="" onerror="this.remove()">
-    <span class="offer-seasonal-banner-label">Spectacles<br>&amp; Accessories</span>
-  </button>
-
-  <h2 class="welcome-gender-heading">Shop by Category</h2>
+  <h2 class="welcome-gender-heading">Shop Watches</h2>
   <div class="welcome-gender-stack">
     <button class="gender-card gender-card-wide" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Watches">
       <img src="images/hero-mens.jpg" alt="Man wearing a stainless steel automatic watch">
@@ -2089,7 +2073,8 @@
   </button>
 </div>
 <div class="offers-tier-strip" id="offersTierStrip" style="display:none"></div>
-<div class="cat-strip" id="catStrip" role="group" aria-label="Categories"></div>
+<h2 class="cat-strip-heading" id="catStripHeading" style="display:none">Shop by Type</h2>
+<div class="cat-strip" id="catStrip" role="group" aria-label="Watch types"></div>
 
 <div class="search-wrap" id="searchWrap">
   <div class="search-row">
@@ -2119,11 +2104,9 @@
   <div class="footer-links-section">
     <div class="footer-link-grid">
       <button onclick="showAllProducts()">Shop</button>
-      <button onclick="goToOffers()">Offers</button>
       <button onclick="selectGenderCategory('mens')">Men's</button>
       <button onclick="selectGenderCategory('womens')">Women's</button>
       <button onclick="selectGenderCategory('unisex')">Unisex</button>
-      <button onclick="selectPriceTierHero('premium3000')">Premium</button>
       <button onclick="openPoliciesPage()">Terms &amp; Policy</button>
       <a href="#" id="footerContactUs" target="_blank" rel="noopener">Contact Us</a>
     </div>
@@ -2156,13 +2139,25 @@
 
     <div class="hamburger-section-title" id="hamburgerHeading">Menu</div>
     <button class="hamburger-link" onclick="closeHamburger(); goHome();">Home</button>
-    <button class="hamburger-link" onclick="closeHamburger(); showAllProducts();">Shop</button>
-    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('mens')">Men's Watches</button>
-    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('womens')">Women's Watches</button>
-    <button class="hamburger-link" onclick="closeHamburger(); selectGenderCategory('unisex')">Unisex Watches</button>
-    <button class="hamburger-link" onclick="closeHamburger(); goToOffers();">Offers</button>
-    <button class="hamburger-link" onclick="closeHamburger(); selectPriceTierHero('premium3000')">Premium</button>
-    <button class="hamburger-link nav-accessories-link" onclick="openAccessoriesSection()" style="display:none">Spectacles &amp; Accessories</button>
+    <!-- Watches is an accordion toggle, not a direct link - tap expands/
+         collapses the submenu below rather than navigating, per the
+         accordion pattern chosen for this menu. "All Watches" inside the
+         submenu covers the plain "browse everything" case that used to be
+         the top-level Shop link. -->
+    <button class="hamburger-link hamburger-accordion-toggle" id="hamWatchesToggle" onclick="toggleHamburgerWatchesSubmenu()" aria-expanded="false" aria-controls="hamWatchesSubmenu">
+      Watches <span class="hamburger-accordion-arrow" aria-hidden="true">&#9662;</span>
+    </button>
+    <div class="hamburger-submenu" id="hamWatchesSubmenu" style="display:none">
+      <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); showAllProducts();">All Watches</button>
+      <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('mens')">Men's Watches</button>
+      <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('womens')">Women's Watches</button>
+      <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('unisex')">Unisex Watches</button>
+    </div>
+    <!-- One link per distinct Category value actually present in the
+         Accessories sheet (Spectacles/Bags/Belts/...) - filled in by
+         updateAccessoryCategoryNav() whenever that sheet loads/changes.
+         Empty and takes up no space until then. -->
+    <div id="hamburgerAccessoryCatLinks"></div>
 
     <a class="hamburger-link wa-link" id="hamburgerWaBtn" href="#" target="_blank" rel="noopener" onclick="closeHamburger()">Contact Us</a>
     <button class="hamburger-link no-border" onclick="closeHamburger(); openPoliciesPage()">Terms & Policy</button>
@@ -2541,6 +2536,22 @@ const ACCESSORY_SHEETS = [
 ];
 let ACCESSORIES = [];
 let hasAccessories = false;
+
+// Accessory categories that ALWAYS get a nav/menu/homepage entry, whether
+// or not the sheet has any rows for them yet (Accessories is an official
+// part of the site, not something that appears once data exists). The
+// label shown is the one below - a sheet Category of "Belt" or "Belts"
+// (any case) is matched to "Belts" and displayed as "Belts". Any OTHER
+// Category value found in the sheet still gets its own entry, shown
+// exactly as typed, after these. Add a name here to make it permanent.
+const ACCESSORY_DEFAULT_CATEGORIES = ["Spectacles", "Belts", "Bags"];
+function accessoryCatKey(c){
+  return String(c || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/s$/, "");
+}
+function canonicalAccessoryCategory(c){
+  const k = accessoryCatKey(c);
+  return ACCESSORY_DEFAULT_CATEGORIES.find(d => accessoryCatKey(d) === k) || c;
+}
 
 // Which catalog is currently being browsed - toggled by
 // openAccessoriesSection()/openWatchesSection(). Everything that BROWSES
@@ -2953,31 +2964,21 @@ function applyAccessoryRows(byType){
   let merged = [];
   Object.keys(byType).forEach(type => {
     const rows = byType[type] || [];
-    const mapped = rowsToWatches(rows).map(item => Object.assign({}, item, { productType: type }));
+    const mapped = rowsToWatches(rows).map(item => Object.assign({}, item, { productType: type, category: canonicalAccessoryCategory(item.category) }));
     merged = merged.concat(mapped);
   });
   ACCESSORIES = merged;
   hasAccessories = ACCESSORIES.length > 0;
-  updateAccessoriesNavVisibility();
+  updateAccessoryCategoryNav();
 
   if(activeSection === "accessories"){
     cachedSuggestionPool = buildSearchSuggestionPool();
-    if(activeCategory !== "All" && !ACCESSORIES.some(s => segmentMatches(s, activeCategory))) activeCategory = "All";
+    if(activeCategory !== "All" && !ACCESSORY_DEFAULT_CATEGORIES.includes(activeCategory) && !ACCESSORIES.some(s => segmentMatches(s, activeCategory))) activeCategory = "All";
     for(const b of [...activeBrands]) if(!ACCESSORIES.some(s => s.brand === b)) activeBrands.delete(b);
     renderFilterStrip(); renderCategories(); renderFilterSheet(); renderSelectedFilters(); renderGrid();
   }
   reconcileCartWithCatalog();
   reconcileSavedWithCatalog();
-}
-
-function updateAccessoriesNavVisibility(){
-  document.querySelectorAll(".nav-accessories-link").forEach(el => {
-    el.style.display = hasAccessories ? "" : "none";
-  });
-  // If accessories were removed from the sheet entirely while someone was
-  // already on that page, don't strand them on a dead section - send them
-  // back to the Watches homepage instead of showing a permanently empty grid.
-  if(!hasAccessories && activeSection === "accessories") goHome();
 }
 
 function loadAccessoriesFromSheet(){
@@ -3234,6 +3235,18 @@ function openHamburger(){
 function closeHamburger(){
   document.getElementById("hamburgerOverlay").classList.remove("open");
   updateBodyScrollLock();
+}
+
+// Expands/collapses the Men's/Women's/Unisex/All Watches submenu nested
+// under the "Watches" hamburger entry - tapping "Watches" itself only
+// toggles this, it doesn't navigate (each sub-item navigates on its own).
+function toggleHamburgerWatchesSubmenu(){
+  const toggle = document.getElementById("hamWatchesToggle");
+  const submenu = document.getElementById("hamWatchesSubmenu");
+  if(!toggle || !submenu) return;
+  const nowOpen = submenu.style.display === "none";
+  submenu.style.display = nowOpen ? "flex" : "none";
+  toggle.setAttribute("aria-expanded", String(nowOpen));
 }
 
 /* ---------- Full-screen photo lightbox ---------- */
@@ -3745,6 +3758,8 @@ function renderCategories(){
   const extra = [...present].filter(p => !knownLower.has(p.toLowerCase())).sort((a,b)=>a.localeCompare(b));
   const cats = [...known, ...extra];
   const strip = document.getElementById("catStrip");
+  const stripHeading = document.getElementById("catStripHeading");
+  if(stripHeading) stripHeading.style.display = (cats.length && activeSection === "watches") ? "" : "none";
   strip.innerHTML = cats.map(c => {
     const img = CATEGORY_IMAGES[c];
     const active = normalizeCategoryValue(c).toLowerCase() === normalizeCategoryValue(activeCategory).toLowerCase();
@@ -3794,19 +3809,13 @@ function updateSecondaryNavActiveOnly(){
   const inWatches = activeSection === "watches";
   const navHome = document.getElementById("navHomeBtn");
   const navAll = document.getElementById("navAllBtn");
-  const navMens = document.getElementById("navMensBtn");
-  const navWomens = document.getElementById("navWomensBtn");
-  const navUnisex = document.getElementById("navUnisexBtn");
   const navPremium = document.getElementById("navPremiumBtn");
   const navOffers = document.getElementById("navOffersBtn");
   const navAccessories = document.getElementById("navAccessoriesBtn");
   const navBack = document.getElementById("navBackBtn");
 
   if(navHome) navHome.classList.toggle("active", onWelcomePage && !suppressActive);
-  if(navAll) navAll.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === null && activeFilter === "all");
-  if(navMens) navMens.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === "M");
-  if(navWomens) navWomens.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === "W");
-  if(navUnisex) navUnisex.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeGender === "MW");
+  if(navAll) navAll.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeFilter === "all");
   if(navPremium) navPremium.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeFilter === "premium3000");
   if(navOffers) navOffers.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && ["offers","under1000","under1500","under2000","seasonal"].includes(activeFilter));
   if(navAccessories) navAccessories.classList.toggle("active", !suppressActive && !onWelcomePage && activeSection === "accessories");
@@ -3829,8 +3838,8 @@ function updatePageChrome(){
   }
   const isPlainAllProducts = activeSection === "watches" && activeGender === null && activeFilter === "all";
   const isOffersTier = activeSection === "watches" && ["offers", "under1000", "under1500", "under2000", "seasonal"].includes(activeFilter);
-  let label = "Shop";
-  if(activeSection === "accessories") label = "Spectacles & Accessories";
+  let label = "Watches";
+  if(activeSection === "accessories") label = activeCategory !== "All" ? activeCategory : "Accessories";
   else if(activeGender === "M") label = "Men's Watches";
   else if(activeGender === "W") label = "Women's Watches";
   else if(activeGender === "MW") label = "Unisex Watches";
@@ -3842,7 +3851,7 @@ function updatePageChrome(){
   else if(activeFilter === "seasonal") label = "Onam Special Offer";
 
   if(heading){ heading.textContent = label; heading.style.display = ""; }
-  if(tiles) tiles.style.display = isPlainAllProducts ? "grid" : "none";
+  if(tiles) tiles.style.display = isPlainAllProducts ? "flex" : "none";
   renderOffersTierStrip(offersTierStrip, isOffersTier);
   renderBreadcrumb();
 }
@@ -3897,7 +3906,7 @@ function renderOffersTierStrip(el, isOffersTier){
 function buildSectionBreadcrumbSegs(){
   const segs = [{ label:"Home", onclick:"goHome()" }];
   if(activeSection === "accessories"){
-    segs.push({ label:"Spectacles & Accessories", onclick:"openAccessoriesSection()" });
+    segs.push({ label:"Accessories", onclick:"openAccessoriesSection()" });
   } else if(activeGender === "M"){
     segs.push({ label:"Men's", onclick:"selectGenderCategory('mens')" });
   } else if(activeGender === "W"){
@@ -3915,7 +3924,7 @@ function buildSectionBreadcrumbSegs(){
     segs.push({ label:"Offers", onclick:"goToOffers()" });
     segs.push({ label:"Onam Special Offer", onclick:"selectPriceTierHero('seasonal')" });
   } else {
-    segs.push({ label:"Shop", onclick:"showAllProducts()" });
+    segs.push({ label:"Watches", onclick:"showAllProducts()" });
   }
   if(activeCategory !== "All") segs.push({ label: activeCategory, onclick: null });
   return segs;
@@ -4425,12 +4434,21 @@ function resetFilterState(){
 // activeCatalog()/segmentMatches). Only reachable at all once
 // hasAccessories is true (see applyAccessoryRows) - the nav link
 // itself is hidden until then.
+// General "browse everything in Accessories" entry point - used by the
+// homepage hero card, the Shop-page tile, and anywhere else that wants
+// the unfiltered landing page (its own category chips above the grid let
+// the shopper narrow from there). The nav/hamburger category shortcuts
+// below skip straight to one category instead via openAccessoryCategory.
 function openAccessoriesSection(){
+  openAccessoryCategory("All");
+}
+
+function openAccessoryCategory(cat){
   closeAllOverlays();
   closeHamburger();
   onWelcomePage = false;
   activeSection = "accessories";
-  activeGender = null; activeCategory = "All"; activeFilter = "all";
+  activeGender = null; activeCategory = cat; activeFilter = "all";
   activeBrands.clear(); activeAvailFilters.clear(); filterNewOnly = false; filterSaleOnly = false;
   searchTerm = "";
   const searchInput = document.getElementById("searchInput");
@@ -4441,6 +4459,51 @@ function openAccessoriesSection(){
   updateGenderHeroVisibility();
   if(location.hash) history.replaceState(null, "", location.pathname + location.search);
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Distinct Category values actually present in ACCESSORIES, in the order
+// they first appear (ACCESSORIES is already Website_Listed-priority
+// sorted, so sheet row order/priority controls nav order too) - this is
+// what turns into one nav/hamburger button per real category rather than
+// a hardcoded Spectacles/Belts/Chains list.
+function accessoryCategoriesPresent(){
+  const list = [...ACCESSORY_DEFAULT_CATEGORIES];
+  ACCESSORIES.forEach(a => {
+    if(a.category && !list.includes(a.category)) list.push(a.category);
+  });
+  return list;
+}
+
+// Rebuilds the per-category nav buttons (top nav strip + hamburger) from
+// whatever's actually in the Accessories sheet right now. Called every
+// time that sheet loads/refreshes (see applyAccessoryRows) so adding a
+// new Category value in the sheet is enough to get it a nav entry - no
+// code change needed here.
+function updateAccessoryCategoryNav(){
+  const cats = accessoryCategoriesPresent();
+  const navEl = document.getElementById("navAccessoryCatBtns");
+  if(navEl){
+    navEl.innerHTML = cats.map(c =>
+      `<button class="secondary-nav-btn accessory-cat-nav-btn" onclick="openAccessoryCategory('${escForInlineJs(c)}')">${escapeHtml(c)}</button>`
+    ).join("");
+  }
+  // Homepage Categories strip: same category list, as cards.
+  const cardEl = document.getElementById("homeAccessoryCatCards");
+  if(cardEl){
+    cardEl.innerHTML = cats.map(c => {
+      const slug = String(c).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const fb = /spectacle|glass|eyewear/i.test(c) ? ' data-fb="images/hero-accessories.jpg"' : "";
+      return `<button class="offer-card home-cat-card" onclick="openAccessoryCategory('${escForInlineJs(c)}')" aria-label="Shop ${escapeHtml(c)}">` +
+        `<img class="offer-card-img" src="images/cat-${slug}.jpg"${fb} alt="" loading="lazy" onerror="if(this.dataset.fb&&!this.dataset.t){this.dataset.t=1;this.src=this.dataset.fb}else{this.remove()}">` +
+        `<span class="offer-card-label">${escapeHtml(c)}</span></button>`;
+    }).join("");
+  }
+  const hamEl = document.getElementById("hamburgerAccessoryCatLinks");
+  if(hamEl){
+    hamEl.innerHTML = cats.map(c =>
+      `<button class="hamburger-link" onclick="closeHamburger(); openAccessoryCategory('${escForInlineJs(c)}')">${escapeHtml(c)}</button>`
+    ).join("");
+  }
 }
 
 function updateFilterBadge(){
@@ -4580,7 +4643,15 @@ function renderFilterSheet(){
 }
 
 function getFilteredWatches(){
-  return activeCatalog().filter(watch=>{
+  // Browsing without a search term stays scoped to whichever section
+  // you're in (Watches or Accessories) - gender/category/brand chips are
+  // section-specific and merging catalogs there would mix unrelated
+  // filters together. The moment a search term is typed, though, it
+  // should find a match regardless of which sheet it's sitting in -
+  // nobody searching "sunglasses" expects to be told to go check a
+  // different section first - so search pulls from both.
+  const source = searchTerm ? [...WATCHES, ...ACCESSORIES] : activeCatalog();
+  return source.filter(watch=>{
     // The search bar always respects whatever category/filters are
     // currently active - it narrows the already-filtered set rather than
     // replacing it. In the "All" category there's no category restriction
@@ -4729,7 +4800,12 @@ function renderGrid(){
   const fullList = getFilteredWatches();
 
   if(fullList.length === 0){
-    grid.innerHTML = `<div class="grid-empty"><span class="emoji" aria-hidden="true">🔎</span>No watches match your search.</div>`;
+    if(activeSection === "accessories" && !searchTerm){
+      const what = activeCategory === "All" ? "Accessories" : activeCategory;
+      grid.innerHTML = `<div class="grid-empty"><span class="emoji" aria-hidden="true">✨</span>${escapeHtml(what)} are arriving soon - check back shortly.</div>`;
+    } else {
+      grid.innerHTML = `<div class="grid-empty"><span class="emoji" aria-hidden="true">🔎</span>No watches match your search.</div>`;
+    }
     renderPagination(0);
     return;
   }
@@ -5917,6 +5993,7 @@ function continueShopping(){
 // making the first call (and starting the refresh interval) so Papa.parse()
 // inside loadWatchesFromSheet() is never called before the library is ready.
 document.addEventListener("DOMContentLoaded", () => {
+  updateAccessoryCategoryNav(); // permanent categories show right away, no waiting on the sheet
   loadWatchesFromSheet();
   loadAccessoriesFromSheet();
 
