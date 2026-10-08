@@ -2554,7 +2554,7 @@ function canonicalAccessoryCategory(c){
 }
 
 // Which catalog is currently being browsed - toggled by
-// openAccessoriesSection()/openWatchesSection(). Everything that BROWSES
+// openAccessoryCategory()/openWatchesSection(). Everything that BROWSES
 // a catalog (filters, segment chips, grid, search suggestions) reads
 // through activeCatalog() so the same code drives both sections. Anything
 // that looks a product up by ID (cart lines, wishlist, item detail,
@@ -2562,7 +2562,15 @@ function canonicalAccessoryCategory(c){
 // watch and a belt at the same time regardless of which section is
 // currently on screen.
 let activeSection = "watches"; // "watches" | "accessories"
-function activeCatalog(){ return activeSection === "accessories" ? ACCESSORIES : WATCHES; }
+// In the accessories section the catalog is ONE category (Spectacles,
+// Belts, Bags...) - never the combined sheet - so brands, filters and the
+// grid can't leak products from a sibling category.
+function activeCatalog(){
+  if(activeSection === "accessories"){
+    return activeCategory === "All" ? ACCESSORIES : ACCESSORIES.filter(s => segmentMatches(s, activeCategory));
+  }
+  return WATCHES;
+}
 function allProducts(){ return WATCHES.concat(ACCESSORIES); }
 
 function toBool(v){ return String(v).trim().toUpperCase() === "TRUE"; }
@@ -2743,7 +2751,7 @@ function applyCatalogRows(rawRows, isLiveFetch){
   hasSeasonalOffer = WATCHES.some(s => s.isSeasonal);
   if(activeFilter === "seasonal" && !hasSeasonalOffer) activeFilter = "all";
 
-  if(activeCategory !== "All" && !activeCatalog().some(s => segmentMatches(s, activeCategory))) activeCategory = "All";
+  if(activeSection === "watches" && activeCategory !== "All" && !activeCatalog().some(s => segmentMatches(s, activeCategory))) activeCategory = "All";
   if(activeGender && !activeCatalog().some(s => watchMatchesGender(s, activeGender))) activeGender = null;
   for(const b of [...activeBrands]) if(!activeCatalog().some(s => s.brand === b)) activeBrands.delete(b);
 
@@ -2973,7 +2981,6 @@ function applyAccessoryRows(byType){
 
   if(activeSection === "accessories"){
     cachedSuggestionPool = buildSearchSuggestionPool();
-    if(activeCategory !== "All" && !ACCESSORY_DEFAULT_CATEGORIES.includes(activeCategory) && !ACCESSORIES.some(s => segmentMatches(s, activeCategory))) activeCategory = "All";
     for(const b of [...activeBrands]) if(!ACCESSORIES.some(s => s.brand === b)) activeBrands.delete(b);
     renderFilterStrip(); renderCategories(); renderFilterSheet(); renderSelectedFilters(); renderGrid();
   }
@@ -3750,6 +3757,14 @@ function categoryScopeWatches(){
 // the section doesn't already do. The breadcrumb's section segment
 // doubles as the way back to "all segments" once one is picked.
 function renderCategories(){
+  if(activeSection === "accessories"){
+    // Each accessory category is its own page - no chips to hop to a sibling.
+    const st = document.getElementById("catStrip"), sh = document.getElementById("catStripHeading");
+    if(st){ st.innerHTML = ""; st.style.display = "none"; }
+    if(sh) sh.style.display = "none";
+    return;
+  }
+  { const st = document.getElementById("catStrip"); if(st) st.style.display = ""; }
   const scoped = categoryScopeWatches();
   const present = new Set();
   scoped.forEach(s => watchSegments(s).forEach(seg => present.add(normalizeCategoryValue(seg))));
@@ -3820,6 +3835,9 @@ function updateSecondaryNavActiveOnly(){
   if(navOffers) navOffers.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && ["offers","under1000","under1500","under2000","seasonal"].includes(activeFilter));
   if(navAccessories) navAccessories.classList.toggle("active", !suppressActive && !onWelcomePage && activeSection === "accessories");
   if(navBack) navBack.classList.toggle("collapsed", onWelcomePage && !suppressActive);
+  document.querySelectorAll(".accessory-cat-nav-btn").forEach(btn => {
+    btn.classList.toggle("active", !suppressActive && !onWelcomePage && activeSection === "accessories" && accessoryCatKey(btn.dataset.cat) === accessoryCatKey(activeCategory));
+  });
 }
 
 // Sets the dedicated-page heading text and shows the small Men's/Women's
@@ -3839,7 +3857,7 @@ function updatePageChrome(){
   const isPlainAllProducts = activeSection === "watches" && activeGender === null && activeFilter === "all";
   const isOffersTier = activeSection === "watches" && ["offers", "under1000", "under1500", "under2000", "seasonal"].includes(activeFilter);
   let label = "Watches";
-  if(activeSection === "accessories") label = activeCategory !== "All" ? activeCategory : "Accessories";
+  if(activeSection === "accessories") label = activeCategory !== "All" ? activeCategory : "Products";
   else if(activeGender === "M") label = "Men's Watches";
   else if(activeGender === "W") label = "Women's Watches";
   else if(activeGender === "MW") label = "Unisex Watches";
@@ -3906,7 +3924,8 @@ function renderOffersTierStrip(el, isOffersTier){
 function buildSectionBreadcrumbSegs(){
   const segs = [{ label:"Home", onclick:"goHome()" }];
   if(activeSection === "accessories"){
-    segs.push({ label:"Accessories", onclick:"openAccessoriesSection()" });
+    segs.push({ label: activeCategory, onclick:`openAccessoryCategory('${escForInlineJs(activeCategory)}')` });
+    return segs;
   } else if(activeGender === "M"){
     segs.push({ label:"Men's", onclick:"selectGenderCategory('mens')" });
   } else if(activeGender === "W"){
@@ -3937,7 +3956,9 @@ function renderBreadcrumb(){
   let segs = [];
   if(itemDetailWatchId !== null){
     const watch = allProducts().find(s => s.id === itemDetailWatchId);
-    segs = buildSectionBreadcrumbSegs();
+    segs = (watch && watch.productType !== undefined)
+      ? [{ label:"Home", onclick:"goHome()" }, { label: watch.category, onclick:`openAccessoryCategory('${escForInlineJs(watch.category)}')` }]
+      : buildSectionBreadcrumbSegs();
     segs.push({ label: watch ? watch.name : "Product", onclick: null });
   } else if(currentFullPage === "policies"){
     segs.push({ label:"Home", onclick:"goHome()" });
@@ -4227,7 +4248,8 @@ function onPriceSliderChange(){
 }
 
 function clearAllFilters(){
-  activeCategory = "All"; activeBrands.clear();
+  if(activeSection !== "accessories") activeCategory = "All"; // an accessory page IS its category
+  activeBrands.clear();
   activeGender = null;
   priceMin = 0; priceMax = 10000; activeAvailFilters.clear(); filterNewOnly = false; filterSaleOnly = false; activeFilter = "all";
   currentPage = 1;
@@ -4428,21 +4450,9 @@ function resetFilterState(){
   renderFilterStrip(); renderCategories(); renderFilterSheet(); renderSelectedFilters(); renderGrid();
 }
 
-// Entry point for the "Spectacles & Accessories" nav link (header +
-// hamburger). A separate top-level section, not a Watches gender/offer
-// tier - no gender split, its own Category-only segment chips (see
-// activeCatalog()/segmentMatches). Only reachable at all once
-// hasAccessories is true (see applyAccessoryRows) - the nav link
-// itself is hidden until then.
-// General "browse everything in Accessories" entry point - used by the
-// homepage hero card, the Shop-page tile, and anywhere else that wants
-// the unfiltered landing page (its own category chips above the grid let
-// the shopper narrow from there). The nav/hamburger category shortcuts
-// below skip straight to one category instead via openAccessoryCategory.
-function openAccessoriesSection(){
-  openAccessoryCategory("All");
-}
-
+// Opens ONE accessory category (Spectacles, Belts, Bags, ...) as its own
+// standalone section - there is no combined "Accessories" page. Used by the
+// top-nav buttons, the hamburger links and the homepage Products cards.
 function openAccessoryCategory(cat){
   closeAllOverlays();
   closeHamburger();
@@ -4484,9 +4494,10 @@ function updateAccessoryCategoryNav(){
   const navEl = document.getElementById("navAccessoryCatBtns");
   if(navEl){
     navEl.innerHTML = cats.map(c =>
-      `<button class="secondary-nav-btn accessory-cat-nav-btn" onclick="openAccessoryCategory('${escForInlineJs(c)}')">${escapeHtml(c)}</button>`
+      `<button class="secondary-nav-btn accessory-cat-nav-btn" data-cat="${escapeHtml(c)}" onclick="openAccessoryCategory('${escForInlineJs(c)}')">${escapeHtml(c)}</button>`
     ).join("");
   }
+  updateSecondaryNavActiveOnly();
   // Homepage Categories strip: same category list, as cards.
   const cardEl = document.getElementById("homeAccessoryCatCards");
   if(cardEl){
@@ -4533,7 +4544,7 @@ function renderSelectedFilters(){
   // filter chip. Showing them here too was confusing since "removing"
   // one didn't actually leave the page it named.
   activeBrands.forEach(b => chips.push({ label:b, onclick:`removeBrand('${escForInlineJs(b)}')` }));
-  if(activeCategory !== "All") chips.push({ label: activeCategory, onclick:`setCategory('All')` });
+  if(activeCategory !== "All" && activeSection !== "accessories") chips.push({ label: activeCategory, onclick:`setCategory('All')` });
   if(activeGender) chips.push({ label: activeGender === "M" ? "Men" : activeGender === "W" ? "Women" : "Unisex", onclick:`setGenderFilter('All')` });
   if(filterNewOnly) chips.push({ label:"New Arrivals", onclick:`toggleNewOnly()` });
   if(filterSaleOnly) chips.push({ label:"On Sale", onclick:`toggleSaleOnly()` });
@@ -4577,6 +4588,8 @@ function renderFilterSheet(){
   // (see renderCategories()/watchSegments()) - picking here calls the
   // exact same setCategory() the chips use, so both stay in sync no
   // matter which one you pick from.
+  const typeAcc = document.getElementById("filterAccordion-type");
+  if(typeAcc) typeAcc.style.display = activeSection === "accessories" ? "none" : "";
   const typeRow = document.getElementById("filterTypeRow");
   if(typeRow){
     const present = new Set();
@@ -4801,8 +4814,7 @@ function renderGrid(){
 
   if(fullList.length === 0){
     if(activeSection === "accessories" && !searchTerm){
-      const what = activeCategory === "All" ? "Accessories" : activeCategory;
-      grid.innerHTML = `<div class="grid-empty"><span class="emoji" aria-hidden="true">✨</span>${escapeHtml(what)} are arriving soon - check back shortly.</div>`;
+      grid.innerHTML = "";
     } else {
       grid.innerHTML = `<div class="grid-empty"><span class="emoji" aria-hidden="true">🔎</span>No watches match your search.</div>`;
     }
@@ -5283,7 +5295,10 @@ function getSimilarWatches(watch, n){
   // whatever section happens to be active - matters for a direct deep
   // link straight into an accessory's product page, where activeSection
   // may still be sitting on its "watches" default.
-  const sourceCatalog = watch.productType !== undefined ? ACCESSORIES : WATCHES;
+  const isAccessory = watch.productType !== undefined;
+  const sourceCatalog = isAccessory
+    ? ACCESSORIES.filter(s => accessoryCatKey(s.category) === accessoryCatKey(watch.category))
+    : WATCHES;
   const ranked = sourceCatalog
     .filter(s => s.id !== watch.id)
     .map(s => ({ watch: s, tier: nameTier(s), priceDist: Math.abs(s.price - watch.price), genderPenalty: genderPenalty(s) }))
