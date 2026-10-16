@@ -40,7 +40,7 @@
   // paint - otherwise the browser briefly shows the full homepage (hero
   // cards, category chips, grid) before the data finishes loading and the
   // product overlay opens on top of it, which reads as a laggy flash.
-  if(/^#watch-\d+$/.test(location.hash) || /^#(mens|womens|premium|offers|offers-1000|offers-1500|offers-2000|seasonal-offers|all-products)$/.test(location.hash)){
+  if(/^#watch-\d+$/.test(location.hash) || /^#(mens|womens|premium|offers|offers-500|offers-1000|offers-1500|offers-2000|seasonal-offers|all-products)$/.test(location.hash)){
     document.documentElement.classList.add("deep-link-pending");
   }
 </script>
@@ -726,22 +726,8 @@
     text-shadow:0 2px 8px rgba(0,0,0,0.35);
   }
   /* Homepage category cards reuse the .offer-card shape/label/image styles. */
-  /* Price-budget cards ("Watches under ₹500"): homepage row + compact picker on price pages */
-  .budget-row{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; padding:0 16px 6px; }
-  .budget-card{
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    padding:18px 8px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); cursor:pointer;
-    background:linear-gradient(135deg, #161616 0%, #3a3a3a 100%); color:#fff; text-align:center;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .budget-card:hover{ transform:translateY(-1px); }
-  .budget-card-top{ font-size:11px; letter-spacing:0.04em; text-transform:uppercase; opacity:0.8; }
-  .budget-card-price{ font-size:24px; font-weight:800; color:#e8c98a; font-family:var(--serif, Georgia, serif); line-height:1.1; }
-  .budget-card.active{ outline:2px solid var(--gold); outline-offset:2px; }
-  .budget-card-compact{ flex:1 1 0; padding:12px 6px; }
-  .budget-card-compact .budget-card-price{ font-size:19px; }
-  @media(min-width:640px){ .budget-row{ max-width:900px; } }
   .offer-card.home-cat-card{ background:linear-gradient(135deg, #161616 0%, #3a3a3a 100%); }
+  .offer-card.offer-500{ background:linear-gradient(135deg, #0f5132 0%, #2fa36b 100%); }
   .offer-card.offer-1000{ background:linear-gradient(135deg, #c0281f 0%, #ff6a3d 100%); }
   .offer-card.offer-1500{ background:linear-gradient(135deg, #7a1616 0%, #b8860b 100%); }
   .offer-card.offer-2000{ background:linear-gradient(135deg, #161616 0%, #3a3a3a 100%); }
@@ -1986,6 +1972,7 @@
        updateAccessoryCategoryNav() whenever that sheet loads/changes.
        Empty and takes up no space until then. -->
   <span id="navAccessoryCatBtns" style="display:contents"></span>
+  <button class="secondary-nav-btn" id="navOffersBtn" onclick="goToOffers()">Offers</button>
 </nav>
 
 <nav class="breadcrumb" id="breadcrumbNav" aria-label="Breadcrumb" style="display:none"></nav>
@@ -2046,10 +2033,19 @@
     </button>
   </div>
 
-  <div id="homeBudgetSection" style="display:none">
-    <h2 class="welcome-gender-heading">Shop Watches by Price</h2>
-    <div class="budget-row" id="homeBudgetRow"></div>
-  </div>
+  <!-- Offer Watches: seasonal sale banner (landscape image, only while some
+       product has Seasonal Sale = TRUE) + one image card per price budget
+       (only budgets that have at least one cheaper watch). Images:
+       images/seasonal-sale.jpg (landscape), images/offer-500.jpg,
+       offer-1000.jpg, offer-1500.jpg (portrait). -->
+  <section class="home-cat-section" id="homeBudgetSection" style="display:none">
+    <h2 class="home-cat-heading">Offer Watches</h2>
+    <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')" aria-label="Seasonal Sale">
+      <img class="offer-seasonal-banner-img" src="images/seasonal-sale.jpg" alt="" onerror="this.remove()">
+      <span class="offer-seasonal-banner-label" id="seasonalBannerLabel">Seasonal Sale</span>
+    </button>
+    <div class="home-cat-strip" id="homeBudgetRow"></div>
+  </section>
 
   <h2 class="featured-heading">Featured</h2>
   <div class="grid" id="homeFeaturedGrid"></div>
@@ -2124,10 +2120,10 @@
 <footer class="site-footer">
   <div class="footer-links-section">
     <div class="footer-link-grid">
-      <button onclick="showAllProducts()">Shop</button>
-      <button onclick="selectGenderCategory('mens')">Men's</button>
-      <button onclick="selectGenderCategory('womens')">Women's</button>
-      <button onclick="selectGenderCategory('unisex')">Unisex</button>
+      <button onclick="goHome()">Home</button>
+      <button onclick="showAllProducts()">Watches</button>
+      <span id="footerAccessoryCatLinks" style="display:contents"></span>
+      <button onclick="goToOffers()">Offers</button>
       <button onclick="openPoliciesPage()">Terms &amp; Policy</button>
       <a href="#" id="footerContactUs" target="_blank" rel="noopener">Contact Us</a>
     </div>
@@ -2179,6 +2175,7 @@
          updateAccessoryCategoryNav() whenever that sheet loads/changes.
          Empty and takes up no space until then. -->
     <div id="hamburgerAccessoryCatLinks"></div>
+    <button class="hamburger-link" onclick="closeHamburger(); goToOffers();">Offers</button>
 
     <a class="hamburger-link wa-link" id="hamburgerWaBtn" href="#" target="_blank" rel="noopener" onclick="closeHamburger()">Contact Us</a>
     <button class="hamburger-link no-border" onclick="closeHamburger(); openPoliciesPage()">Terms & Policy</button>
@@ -2793,7 +2790,6 @@ function applyCatalogRows(rawRows, isLiveFetch){
   ACCESSORIES = allItems.filter(s => s.productCategory !== "Watches").map(s => Object.assign({}, s, { productType: "Accessories" }));
   hasAccessories = ACCESSORIES.length > 0;
   updateAccessoryCategoryNav();
-  renderBudgetCards();
   cachedSuggestionPool = buildSearchSuggestionPool();
 
   // Recompute whether the Special Offers card should show at all - it's
@@ -2817,6 +2813,7 @@ function applyCatalogRows(rawRows, isLiveFetch){
   updateCartCount();
   updateGenderHeroVisibility();
   updateSeasonalCardVisibility();
+  renderBudgetCards();
   document.getElementById("grid").setAttribute("aria-busy", "false");
 
   if(itemDetailWatchId !== null){
@@ -3801,7 +3798,7 @@ function updateSecondaryNavActiveOnly(){
   if(navHome) navHome.classList.toggle("active", onWelcomePage && !suppressActive);
   if(navAll) navAll.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeFilter === "all");
   if(navPremium) navPremium.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && activeFilter === "premium3000");
-  if(navOffers) navOffers.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && ["offers","under1000","under1500","under2000","seasonal"].includes(activeFilter));
+  if(navOffers) navOffers.classList.toggle("active", !suppressActive && !onWelcomePage && inWatches && ["offers","under500","under1000","under1500","under2000","seasonal"].includes(activeFilter));
   if(navAccessories) navAccessories.classList.toggle("active", !suppressActive && !onWelcomePage && activeSection === "accessories");
   if(navBack) navBack.classList.toggle("collapsed", onWelcomePage && !suppressActive);
   document.querySelectorAll(".accessory-cat-nav-btn").forEach(btn => {
@@ -3836,7 +3833,7 @@ function updatePageChrome(){
   else if(activeFilter === "under1000") label = "Watches Under ₹1,000";
   else if(activeFilter === "under1500") label = "Watches Under ₹1,500";
   else if(activeFilter === "under2000") label = "Under ₹2,000";
-  else if(activeFilter === "seasonal") label = "Onam Special Offer";
+  else if(activeFilter === "seasonal") label = SEASONAL_SALE_LABEL;
 
   if(heading){ heading.textContent = label; heading.style.display = ""; }
   if(tiles) tiles.style.display = isPlainAllProducts ? "flex" : "none";
@@ -3844,10 +3841,25 @@ function updatePageChrome(){
   renderBreadcrumb();
 }
 
-// The 3 Offers tiers as a compact, horizontally-scrollable picker at the
-// top of the Offers grid page itself - tapping one switches tier without
-// leaving the page. Only rendered/visible while actually on an Offers
-// tier (not Men's/Women's/Premium/All Products).
+// Label for the seasonal sale (card text, page heading, breadcrumb). Change
+// this one line when the season changes, and swap images/seasonal-sale.jpg
+// (landscape, homepage) and images/seasonal-sale-portrait.jpg (Offers page).
+const SEASONAL_SALE_LABEL = "Seasonal Sale";
+
+// Price budgets offered on the homepage and the Offers page. A budget is
+// only offered while at least one watch is actually cheaper than it, so it
+// never leads to an empty grid.
+const BUDGET_TIERS = [500, 1000, 1500];
+function budgetTiersInStock(){
+  return BUDGET_TIERS.filter(n => WATCHES.some(w => w.price > 0 && w.price < n));
+}
+function offerImgTag(file){
+  return `<img class="offer-card-img" src="images/${file}" alt="" loading="lazy" onerror="this.remove()">`;
+}
+
+// Tier picker on the Offers pages: image cards - Seasonal Sale first (when
+// on) then each price budget; the current one gets a gold ring. Tapping
+// switches tier without leaving the page.
 function renderOffersTierStrip(el, isOffersTier){
   if(!el) return;
   if(!isOffersTier){
@@ -3855,30 +3867,32 @@ function renderOffersTierStrip(el, isOffersTier){
     el.innerHTML = "";
     return;
   }
-  const tiers = BUDGET_TIERS.map(n => ({ key:"under"+n, n }));
+  const cards = [];
+  if(hasSeasonalOffer || activeFilter === "seasonal"){
+    cards.push(`<button class="offer-card offer-card-compact offer-seasonal ${activeFilter==="seasonal"?'active':''}" onclick="selectPriceTierHero('seasonal')" aria-pressed="${activeFilter==="seasonal"}">${offerImgTag("seasonal-sale-portrait.jpg")}<span class="offer-card-label">${escapeHtml(SEASONAL_SALE_LABEL)}</span></button>`);
+  }
+  const inStock = budgetTiersInStock();
+  BUDGET_TIERS.filter(n => inStock.includes(n) || activeFilter === "under"+n).forEach(n => {
+    const key = "under" + n, on = activeFilter === key;
+    cards.push(`<button class="offer-card offer-card-compact offer-${n} ${on?'active':''}" onclick="selectPriceTierHero('${key}')" aria-pressed="${on}">${offerImgTag("offer-"+n+".jpg")}<span class="offer-card-label">Under &#8377;${n.toLocaleString("en-IN")}</span></button>`);
+  });
   el.style.display = "flex";
-  el.innerHTML = tiers.map(t => `
-    <button class="budget-card budget-card-compact ${activeFilter===t.key?'active':''}" onclick="selectPriceTierHero('${t.key}')" aria-pressed="${activeFilter===t.key}">
-      <span class="budget-card-top">Watches under</span>
-      <span class="budget-card-price">&#8377;${t.n.toLocaleString("en-IN")}</span>
-    </button>
-  `).join("");
+  el.innerHTML = cards.join("");
 }
 
-// Price budgets offered on the homepage and the price pages. A homepage
-// card only shows while at least one watch is actually cheaper than it, so
-// it never leads to an empty grid.
-const BUDGET_TIERS = [500, 1000, 1500];
 function renderBudgetCards(){
   const sec = document.getElementById("homeBudgetSection");
   const row = document.getElementById("homeBudgetRow");
   if(!sec || !row) return;
-  const tiers = BUDGET_TIERS.filter(n => WATCHES.some(w => w.price > 0 && w.price < n));
-  sec.style.display = tiers.length ? "" : "none";
+  const tiers = budgetTiersInStock();
+  const lbl = document.getElementById("seasonalBannerLabel");
+  if(lbl) lbl.textContent = SEASONAL_SALE_LABEL;
+  sec.style.display = (tiers.length || hasSeasonalOffer) ? "" : "none";
+  row.style.display = tiers.length ? "" : "none";
   row.innerHTML = tiers.map(n => `
-    <button class="budget-card" onclick="selectPriceTierHero('under${n}')" aria-label="Shop watches under ${n} rupees">
-      <span class="budget-card-top">Watches under</span>
-      <span class="budget-card-price">&#8377;${n.toLocaleString("en-IN")}</span>
+    <button class="offer-card offer-${n}" onclick="selectPriceTierHero('under${n}')" aria-label="Shop watches under ${n} rupees">
+      ${offerImgTag("offer-"+n+".jpg")}
+      <span class="offer-card-label">Under &#8377;${n.toLocaleString("en-IN")}</span>
     </button>
   `).join("");
 }
@@ -3916,11 +3930,11 @@ function buildSectionBreadcrumbSegs(){
   } else if(activeFilter === "offers"){
     segs.push({ label:"Offers", onclick:"goToOffers()" });
   } else if(["under500","under1000","under1500","under2000"].includes(activeFilter)){
-    segs.push({ label:"Watches", onclick:"showAllProducts()" });
+    segs.push({ label:"Offers", onclick:"goToOffers()" });
     segs.push({ label: QUICK_FILTER_LABELS[activeFilter], onclick:`selectPriceTierHero('${activeFilter}')` });
   } else if(activeFilter === "seasonal"){
     segs.push({ label:"Offers", onclick:"goToOffers()" });
-    segs.push({ label:"Onam Special Offer", onclick:"selectPriceTierHero('seasonal')" });
+    segs.push({ label: SEASONAL_SALE_LABEL, onclick:"selectPriceTierHero('seasonal')" });
   } else {
     segs.push({ label:"Watches", onclick:"showAllProducts()" });
   }
@@ -3992,6 +4006,7 @@ function viewKeyAndHash(){
   if(activeGender === "MW") return { key: "unisex", hash: "#unisex" };
   if(activeFilter === "premium3000") return { key: "premium", hash: "#premium" };
   if(activeFilter === "offers") return { key: "offers", hash: "#offers" };
+  if(activeFilter === "under500") return { key: "offers500", hash: "#offers-500" };
   if(activeFilter === "under1000") return { key: "offers1000", hash: "#offers-1000" };
   if(activeFilter === "under1500") return { key: "offers1500", hash: "#offers-1500" };
   if(activeFilter === "under2000") return { key: "offers2000", hash: "#offers-2000" };
@@ -4027,6 +4042,7 @@ function applyViewFromHash(hash){
   else if(hash === "#unisex") selectGenderCategory("unisex");
   else if(hash === "#premium") selectPriceTierHero("premium3000");
   else if(hash === "#offers") selectPriceTierHero("offers");
+  else if(hash === "#offers-500") selectPriceTierHero("under500");
   else if(hash === "#offers-1000") selectPriceTierHero("under1000");
   else if(hash === "#offers-1500") selectPriceTierHero("under1500");
   else if(hash === "#offers-2000") selectPriceTierHero("under2000");
@@ -4493,6 +4509,12 @@ function updateAccessoryCategoryNav(){
         `<span class="offer-card-label">${escapeHtml(c)}</span></button>`;
     }).join("");
   }
+  const footEl = document.getElementById("footerAccessoryCatLinks");
+  if(footEl){
+    footEl.innerHTML = cats.map(c =>
+      `<button onclick="openAccessoryCategory('${escForInlineJs(c)}')">${escapeHtml(c)}</button>`
+    ).join("");
+  }
   const hamEl = document.getElementById("hamburgerAccessoryCatLinks");
   if(hamEl){
     hamEl.innerHTML = cats.map(c =>
@@ -4906,23 +4928,14 @@ function renderGrid(){
 let homeFeaturedVisibleCount = 8;
 const HOME_FEATURED_PAGE_SIZE = 8;
 
-// Featured mixes every product category - Watches, Spectacles, Bags, Belts.
-// Within each category items are ranked by sheet priority (Website_Listed)
-// then newest row; the categories are then dealt out round-robin so every
-// category with stock gets a share of the grid (a big watch catalog can't
-// crowd the others out). A category that runs out just drops from the rotation.
+// Featured = every product, any category (watch, spectacle, bag, belt...),
+// ranked by sheet priority (Website_Listed) then newest-added row first.
 function featuredPool(){ return [...WATCHES, ...ACCESSORIES]; }
 function getFeaturedHomeWatches(n){
-  const rank = (a, b) => (b.listedPriority - a.listedPriority) || (b.order - a.order);
-  const groups = {};
-  featuredPool().forEach(s => { (groups[s.productCategory] = groups[s.productCategory] || []).push(s); });
-  const cats = ["Watches", ...accessoryCategoriesPresent()].filter(c => groups[c]);
-  Object.keys(groups).forEach(c => { groups[c].sort(rank); if(!cats.includes(c)) cats.push(c); });
-  const out = [];
-  for(let i = 0; out.length < n && cats.some(c => groups[c].length > i); i++){
-    cats.forEach(c => { if(out.length < n && groups[c][i]) out.push(groups[c][i]); });
-  }
-  return out;
+  return featuredPool().sort((a, b) => {
+    if(a.listedPriority !== b.listedPriority) return b.listedPriority - a.listedPriority;
+    return b.order - a.order;
+  }).slice(0, n);
 }
 
 // Renders the homepage's "Featured" preview grid. Same card markup as
