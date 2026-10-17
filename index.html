@@ -3596,7 +3596,7 @@ function renderFilterStrip(){
 // "under2000"/"premium3000", which no longer have a pill of their own here
 // but still need a human-readable label for the removable chip in the
 // selected-filters row (see renderSelectedFilters).
-const QUICK_FILTER_LABELS = { offers:"Offers", under500:"Under ₹500", under1000:"Under ₹1,000", under1500:"Under ₹1,500", under2000:"Under ₹2000", premium3000:"Premium" };
+const QUICK_FILTER_LABELS = { offers:"Offers", under500:"Under ₹500", under1000:"Under ₹1,000", under1500:"Under ₹1,500", under2000:"Under ₹2,000", premium3000:"Premium" };
 
 function setFilter(key){
   activeFilter = key;
@@ -3832,7 +3832,7 @@ function updatePageChrome(){
   else if(activeFilter === "under500") label = "Watches Under ₹500";
   else if(activeFilter === "under1000") label = "Watches Under ₹1,000";
   else if(activeFilter === "under1500") label = "Watches Under ₹1,500";
-  else if(activeFilter === "under2000") label = "Under ₹2,000";
+  else if(activeFilter === "under2000") label = "Watches Under ₹2,000";
   else if(activeFilter === "seasonal") label = SEASONAL_SALE_LABEL;
 
   if(heading){ heading.textContent = label; heading.style.display = ""; }
@@ -3849,7 +3849,7 @@ const SEASONAL_SALE_LABEL = "Seasonal Sale";
 // Price budgets offered on the homepage and the Offers page. A budget is
 // only offered while at least one watch is actually cheaper than it, so it
 // never leads to an empty grid.
-const BUDGET_TIERS = [500, 1000, 1500];
+const BUDGET_TIERS = [500, 1000, 1500, 2000];
 function budgetTiersInStock(){
   return BUDGET_TIERS.filter(n => WATCHES.some(w => w.price > 0 && w.price < n));
 }
