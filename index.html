@@ -588,8 +588,7 @@
     border-bottom:1px solid var(--line);
     background:var(--paper);
     position:sticky; top:var(--header-h); z-index:10;
-    mask-image:linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
-    -webkit-mask-image:linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
+    /* (no edge-fade mask: a mask also fades the nav's own background, letting the page behind show through as dark smears at the edges) */
   }
   .secondary-nav::-webkit-scrollbar{ display:none; }
   .secondary-nav-btn{
@@ -2040,9 +2039,9 @@
        offer-1000.jpg, offer-1500.jpg (portrait). -->
   <section class="home-cat-section" id="homeBudgetSection" style="display:none">
     <h2 class="home-cat-heading">Offer Watches</h2>
-    <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')" aria-label="Seasonal Sale">
+    <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')" aria-label="Special Offers">
       <img class="offer-seasonal-banner-img" src="images/seasonal-sale.jpg" alt="" onerror="this.remove()">
-      <span class="offer-seasonal-banner-label" id="seasonalBannerLabel">Seasonal Sale</span>
+      <span class="offer-seasonal-banner-label" id="seasonalBannerLabel">Special Offers</span>
     </button>
     <div class="home-cat-strip" id="homeBudgetRow"></div>
   </section>
@@ -3645,6 +3644,23 @@ function escForInlineJs(str){
 // case/whitespace-insensitive so small sheet inconsistencies ("ballet"
 // vs "Ballet") still match the chip.
 function normalizeCategoryValue(cat){ return (cat || "").trim(); }
+// Candidate image paths for a non-watch sub-category card, tried in order:
+// exactly what was typed, then singular/plural, then with the category word
+// dropped ("Reversible Belt" in Belts -> "reversible"), so small naming
+// differences in the sheet still find the picture.
+function chipImgCandidates(cat, sub){
+  const catSlug = imgSlug(cat);
+  const base = imgSlug(sub);
+  const catWords = new Set([catSlug, catSlug.replace(/s$/, ""), catSlug + "s"]);
+  const stripped = base.split("-").filter(t => !catWords.has(t)).join("-");
+  const forms = [base, stripped].filter(Boolean).flatMap(f => [f, f.replace(/s$/, ""), f + "s"]);
+  return [...new Set(forms)].map(f => `images/seg-${catSlug}-${f}.jpg`);
+}
+function chipImgNext(img){
+  const rest = (img.dataset.alt || "").split("|").filter(Boolean);
+  if(rest.length){ img.src = rest.shift(); img.dataset.alt = rest.join("|"); }
+  else img.remove();
+}
 function imgSlug(x){ return String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
 // A watch matches a segment filter if its Category equals the segment
 // value (case/whitespace-insensitive).
@@ -3742,14 +3758,15 @@ function renderCategories(){
     // Non-watch sub-categories get an image card from images/seg-<category>-<sub>.jpg
     // (e.g. seg-spectacles-aviator.jpg); a missing file just leaves the plain
     // card with its label, so a new sub-category in the sheet never breaks.
-    const img = isAcc ? `images/seg-${imgSlug(activeAccessoryCat)}-${imgSlug(c)}.jpg` : CATEGORY_IMAGES[c];
+    const accCands = isAcc ? chipImgCandidates(activeAccessoryCat, c) : [];
+    const img = isAcc ? accCands[0] : CATEGORY_IMAGES[c];
     const active = normalizeCategoryValue(c).toLowerCase() === normalizeCategoryValue(activeCategory).toLowerCase();
     if(!img){
       return `<button class="cat-chip ${active?'active':''}" onclick="setCategory('${escForInlineJs(c)}')" aria-pressed="${active}">${escapeHtml(c)}</button>`;
     }
     return `
       <button class="cat-pick-card ${active?'active':''}" onclick="setCategory('${escForInlineJs(c)}')" aria-pressed="${active}" aria-label="Shop ${escapeHtml(c)}">
-        <img src="${img}" alt="${escapeHtml(c)}" loading="lazy"${isAcc ? ' onerror="this.remove()"' : ''}>
+        <img src="${img}" alt="${escapeHtml(c)}" loading="lazy"${isAcc ? ` data-alt="${accCands.slice(1).join('|')}" onerror="chipImgNext(this)"` : ''}>
         <div class="cat-pick-overlay"><span class="cat-pick-label">${escapeHtml(c)}</span></div>
       </button>`;
   }).join("");
@@ -3844,7 +3861,7 @@ function updatePageChrome(){
 // Label for the seasonal sale (card text, page heading, breadcrumb). Change
 // this one line when the season changes, and swap images/seasonal-sale.jpg
 // (landscape, homepage) and images/seasonal-sale-portrait.jpg (Offers page).
-const SEASONAL_SALE_LABEL = "Seasonal Sale";
+const SEASONAL_SALE_LABEL = "Special Offers";
 
 // Price budgets offered on the homepage and the Offers page. A budget is
 // only offered while at least one watch is actually cheaper than it, so it
@@ -4448,8 +4465,22 @@ function resetFilterState(){
 // Opens ONE accessory category (Spectacles, Belts, Bags, ...) as its own
 // standalone section - there is no combined "Accessories" page. Used by the
 // top-nav buttons, the hamburger links and the homepage Products cards.
+// Category chip inside the Filters sheet: switches the page BEHIND the sheet
+// and re-renders Type / Gender / Brand for the new category, but leaves the
+// sheet open so the rest of the filters can still be picked. (The nav and
+// homepage cards use showAllProducts()/openAccessoryCategory(), which navigate
+// and close overlays.)
 function switchProductCategory(c){
-  if(c === "Watches") showAllProducts(); else openAccessoryCategory(c);
+  resetFilterState();
+  if(c !== "Watches"){
+    activeSection = "accessories";
+    activeAccessoryCat = canonicalAccessoryCategory(c);
+    cachedSuggestionPool = buildSearchSuggestionPool();
+    renderFilterStrip(); renderCategories(); renderFilterSheet(); renderSelectedFilters(); renderGrid();
+  }
+  updateGenderHeroVisibility();
+  if(location.hash) history.replaceState(null, "", location.pathname + location.search);
+  if(!openFilterSections.has("type")) toggleFilterSection("type"); // open Type so it's the obvious next pick
 }
 
 function openAccessoryCategory(cat){
@@ -4652,21 +4683,13 @@ function renderFilterSheet(){
     `;
   }
 
-  // Availability filter (COD) sits at the very bottom of the panel and is
-  // conditionally shown - only when at least one product in the catalog
-  // actually has COD Available set to TRUE.
-  const anyCod = activeCatalog().some(s => s.codAvailable);
+  // Availability filter (COD) sits at the bottom of the panel and is always
+  // shown, for every category.
   const availSection = document.getElementById("filterAccordion-avail");
   const availRow = document.getElementById("filterAvailRow");
   if(availSection && availRow){
-    if(!anyCod){
-      availSection.style.display = "none";
-    } else {
-      availSection.style.display = "";
-      const availChips = [];
-      availChips.push(`<button class="filter-chip ${activeAvailFilters.has('cod')?'active':''}" onclick="setAvailFilter('cod')" aria-pressed="${activeAvailFilters.has('cod')}">Cash on Delivery Available (COD)</button>`);
-      availRow.innerHTML = availChips.join("");
-    }
+    availSection.style.display = "";
+    availRow.innerHTML = `<button class="filter-chip ${activeAvailFilters.has('cod')?'active':''}" onclick="setAvailFilter('cod')" aria-pressed="${activeAvailFilters.has('cod')}">Cash on Delivery Available (COD)</button>`;
   }
 
   updateFilterBadge();
