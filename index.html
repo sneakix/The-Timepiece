@@ -2417,16 +2417,16 @@
     <button class="sheet-back-link" onclick="backToCart()">← Back to cart</button>
     <h2 id="checkoutHeading">Delivery Details</h2>
     <form id="checkoutForm" onsubmit="submitOrder(event)">
-      <div class="field"><label for="f_name">Full Name</label><input required id="f_name" name="name" autocomplete="shipping name" placeholder="Your name"></div>
+      <div class="field"><label for="f_name">Name</label><input required id="f_name" name="name" autocomplete="shipping name" placeholder="Your name"></div>
+      <div class="field"><label for="f_address">Full Address</label><textarea required id="f_address" name="address" autocomplete="shipping street-address" rows="2" placeholder="House no, street, area"></textarea></div>
+      <div class="field"><label for="f_state">State</label><input required id="f_state" name="state" list="stateList" autocomplete="off" autocapitalize="words" oninput="onCheckoutStateInput()" placeholder="Start typing, e.g. Kerala"><datalist id="stateList"></datalist></div>
+      <div class="field"><label for="f_district">District</label><input required id="f_district" name="district" list="districtList" autocomplete="off" autocapitalize="words" placeholder="Start typing your district"><datalist id="districtList"></datalist></div>
+      <div class="field"><label for="f_town">City</label><input required id="f_town" name="town" autocomplete="shipping address-level2" placeholder="City / Town"></div>
+      <div class="field"><label for="f_pin">Pincode</label><input required id="f_pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="shipping postal-code" placeholder="6-digit pincode"></div>
+      <div class="field"><label for="f_landmark">Nearest Landmark <span class="optional">(optional)</span></label><input id="f_landmark" name="landmark" placeholder="Nearby landmark"></div>
+      <div class="field"><label for="f_phone1">Contact Number 1</label><input required id="f_phone1" name="phone1" type="tel" inputmode="numeric" autocomplete="shipping tel" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number"></div>
+      <div class="field"><label for="f_phone2">Contact Number 2 <span class="optional">(optional)</span></label><input id="f_phone2" name="phone2" type="tel" inputmode="numeric" autocomplete="off" pattern="[0-9]{10}" maxlength="10" placeholder="Backup number"></div>
       <div class="field"><label for="f_insta">Instagram Handle <span class="optional">(optional)</span></label><input id="f_insta" name="insta" placeholder="@yourhandle"></div>
-      <div class="field"><label for="f_address">Address (House / Street)</label><textarea required id="f_address" name="address" autocomplete="shipping street-address" rows="2" placeholder="House no, street, area"></textarea></div>
-      <div class="field"><label for="f_landmark">Landmark <span class="optional">(optional)</span></label><input id="f_landmark" name="landmark" placeholder="Nearby landmark"></div>
-      <div class="field"><label for="f_town">Town / City</label><input required id="f_town" name="town" autocomplete="shipping address-level2" placeholder="Town"></div>
-      <div class="field"><label for="f_district">District</label><input required id="f_district" name="district" placeholder="District"></div>
-      <div class="field"><label for="f_state">State</label><input required id="f_state" name="state" autocomplete="shipping address-level1" placeholder="State"></div>
-      <div class="field"><label for="f_pin">PIN Code</label><input required id="f_pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="shipping postal-code" placeholder="6-digit PIN"></div>
-      <div class="field"><label for="f_phone1">Contact No. 1</label><input required id="f_phone1" name="phone1" type="tel" inputmode="numeric" autocomplete="shipping tel" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number"></div>
-      <div class="field"><label for="f_phone2">Contact No. 2 <span class="optional">(optional)</span></label><input id="f_phone2" name="phone2" type="tel" inputmode="numeric" autocomplete="off" pattern="[0-9]{10}" maxlength="10" placeholder="Backup number"></div>
       <div class="field"><label for="f_remarks">Remarks / Additional Notes <span class="optional">(optional)</span></label><textarea id="f_remarks" name="remarks" rows="2" placeholder="Additional Information or Queries"></textarea></div>
       <button type="submit" class="wa-submit">Send Order on WhatsApp</button>
       <div class="form-note">Tapping this opens WhatsApp with your full order pre-filled. Nothing is charged here - payment is arranged directly in chat.</div>
@@ -2509,7 +2509,8 @@ const WA_ICON_SVG = '<svg class="wa-ico" viewBox="0 0 24 24" aria-hidden="true" 
 // ₹, &, #, quotes, etc. can't break the link.
 function buildWhatsAppEnquiryUrl(watch){
   const link = `${SITE_URL}#watch-${watch.id}`;
-  let msg = `Hi, I'm interested in this watch:\nProduct: ${watch.name}\n`;
+  const noun = watch.productType === undefined ? "watch" : "product";
+  let msg = `Hi, I'm interested in this ${noun}:\nProduct: ${watch.name}\n`;
   if(watch.price) msg += `Price: ₹${watch.price.toLocaleString("en-IN")}\n`;
   msg += `Link: ${link}\n\nIs this available?`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
@@ -5979,6 +5980,32 @@ function backToCart(){
   openCart();
 }
 
+
+// ---------- India states + districts (autocomplete) ----------
+// Suggestions only: the District box accepts any typed value, so a district
+// created after this list was compiled can still be entered. State must be
+// one of these (full names, e.g. "Kerala", never "KL").
+const INDIA_STATES_DISTRICTS = {"Andaman and Nicobar Islands":["Nicobar","North and Middle Andaman","South Andaman"],"Andhra Pradesh":["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Nellore","Prakasam","Srikakulam","Visakhapatnam","Vizianagaram","West Godavari","YSR Kadapa"],"Arunachal Pradesh":["Anjaw","Changlang","Dibang Valley","East Kameng","East Siang","Kra Daadi","Kurung Kumey","Lohit","Longding","Lower Dibang Valley","Lower Siang","Lower Subansiri","Namsai","Papum Pare","Siang","Tawang","Tirap","Upper Siang","Upper Subansiri","West Kameng","West Siang"],"Assam":["Baksa","Barpeta","Biswanath","Bongaigaon","Cachar","Charaideo","Chirang","Darrang","Dhemaji","Dhubri","Dibrugarh","Dima Hasao","Goalpara","Golaghat","Hailakandi","Hojai","Jorhat","Kamrup","Kamrup Metropolitan","Karbi Anglong","Karimganj","Kokrajhar","Lakhimpur","Majuli","Morigaon","Nagaon","Nalbari","Sivasagar","Sonitpur","South Salmara-Mankachar","Tinsukia","Udalguri","West Karbi Anglong"],"Bihar":["Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar","Darbhanga","East Champaran (Motihari)","Gaya","Gopalganj","Jamui","Jehanabad","Kaimur (Bhabua)","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura","Madhubani","Munger (Monghyr)","Muzaffarpur","Nalanda","Nawada","Patna","Purnia (Purnea)","Rohtas","Saharsa","Samastipur","Saran","Sheikhpura","Sheohar","Sitamarhi","Siwan","Supaul","Vaishali","West Champaran"],"Chandigarh":["Chandigarh"],"Chhattisgarh":["Balod","Baloda Bazar","Balrampur","Bastar","Bemetara","Bijapur","Bilaspur","Dantewada (South Bastar)","Dhamtari","Durg","Gariyaband","Janjgir-Champa","Jashpur","Kabirdham (Kawardha)","Kanker (North Bastar)","Kondagaon","Korba","Korea (Koriya)","Mahasamund","Mungeli","Narayanpur","Raigarh","Raipur","Rajnandgaon","Sukma","Surajpur","Surguja"],"Dadra and Nagar Haveli and Daman and Diu":["Dadra and Nagar Haveli","Daman","Diu"],"Delhi":["Central Delhi","East Delhi","New Delhi","North Delhi","North East  Delhi","North West  Delhi","Shahdara","South Delhi","South East Delhi","South West  Delhi","West Delhi"],"Goa":["North Goa","South Goa"],"Gujarat":["Ahmedabad","Amreli","Anand","Aravalli","Banaskantha (Palanpur)","Bharuch","Bhavnagar","Botad","Chhota Udepur","Dahod","Dangs (Ahwa)","Devbhoomi Dwarka","Gandhinagar","Gir Somnath","Jamnagar","Junagadh","Kachchh","Kheda (Nadiad)","Mahisagar","Mehsana","Morbi","Narmada (Rajpipla)","Navsari","Panchmahal (Godhra)","Patan","Porbandar","Rajkot","Sabarkantha (Himmatnagar)","Surat","Surendranagar","Tapi (Vyara)","Vadodara","Valsad"],"Haryana":["Ambala","Bhiwani","Charkhi Dadri","Faridabad","Fatehabad","Gurgaon","Hisar","Jhajjar","Jind","Kaithal","Karnal","Kurukshetra","Mahendragarh","Mewat","Palwal","Panchkula","Panipat","Rewari","Rohtak","Sirsa","Sonipat","Yamunanagar"],"Himachal Pradesh":["Bilaspur","Chamba","Hamirpur","Kangra","Kinnaur","Kullu","Lahaul &amp; Spiti","Mandi","Shimla","Sirmaur (Sirmour)","Solan","Una"],"Jammu and Kashmir":["Anantnag","Bandipore","Baramulla","Budgam","Doda","Ganderbal","Jammu","Kargil","Kathua","Kishtwar","Kulgam","Kupwara","Leh","Poonch","Pulwama","Rajouri","Ramban","Reasi","Samba","Shopian","Srinagar","Udhampur"],"Jharkhand":["Bokaro","Chatra","Deoghar","Dhanbad","Dumka","East Singhbhum","Garhwa","Giridih","Godda","Gumla","Hazaribag","Jamtara","Khunti","Koderma","Latehar","Lohardaga","Pakur","Palamu","Ramgarh","Ranchi","Sahibganj","Seraikela-Kharsawan","Simdega","West Singhbhum"],"Karnataka":["Bagalkot","Ballari (Bellary)","Belagavi (Belgaum)","Bengaluru (Bangalore) Rural","Bengaluru (Bangalore) Urban","Bidar","Chamarajanagar","Chikballapur","Chikkamagaluru (Chikmagalur)","Chitradurga","Dakshina Kannada","Davangere","Dharwad","Gadag","Hassan","Haveri","Kalaburagi (Gulbarga)","Kodagu","Kolar","Koppal","Mandya","Mysuru (Mysore)","Raichur","Ramanagara","Shivamogga (Shimoga)","Tumakuru (Tumkur)","Udupi","Uttara Kannada (Karwar)","Vijayapura (Bijapur)","Yadgir"],"Kerala":["Alappuzha","Ernakulam","Idukki","Kannur","Kasaragod","Kollam","Kottayam","Kozhikode","Malappuram","Palakkad","Pathanamthitta","Thiruvananthapuram","Thrissur","Wayanad"],"Ladakh":["Kargil","Leh"],"Lakshadweep":["Agatti","Amini","Androth","Bithra","Chethlath","Kadmath","Kalpeni","Kavaratti","Kilthan","Minicoy"],"Madhya Pradesh":["Agar Malwa","Alirajpur","Anuppur","Ashoknagar","Balaghat","Barwani","Betul","Bhind","Bhopal","Burhanpur","Chhatarpur","Chhindwara","Damoh","Datia","Dewas","Dhar","Dindori","Guna","Gwalior","Harda","Hoshangabad","Indore","Jabalpur","Jhabua","Katni","Khandwa","Khargone","Mandla","Mandsaur","Morena","Narsinghpur","Neemuch","Panna","Raisen","Rajgarh","Ratlam","Rewa","Sagar","Satna","Sehore","Seoni","Shahdol","Shajapur","Sheopur","Shivpuri","Sidhi","Singrauli","Tikamgarh","Ujjain","Umaria","Vidisha"],"Maharashtra":["Ahmednagar","Akola","Amravati","Aurangabad","Beed","Bhandara","Buldhana","Chandrapur","Dhule","Gadchiroli","Gondia","Hingoli","Jalgaon","Jalna","Kolhapur","Latur","Mumbai City","Mumbai Suburban","Nagpur","Nanded","Nandurbar","Nashik","Osmanabad","Palghar","Parbhani","Pune","Raigad","Ratnagiri","Sangli","Satara","Sindhudurg","Solapur","Thane","Wardha","Washim","Yavatmal"],"Manipur":["Bishnupur","Chandel","Churachandpur","Imphal East","Imphal West","Jiribam","Kakching","Kamjong","Kangpokpi","Noney","Pherzawl","Senapati","Tamenglong","Tengnoupal","Thoubal","Ukhrul"],"Meghalaya":["East Garo Hills","East Jaintia Hills","East Khasi Hills","North Garo Hills","Ri Bhoi","South Garo Hills","South West Garo Hills","South West Khasi Hills","West Garo Hills","West Jaintia Hills","West Khasi Hills"],"Mizoram":["Aizawl","Champhai","Kolasib","Lawngtlai","Lunglei","Mamit","Saiha","Serchhip"],"Nagaland":["Dimapur","Kiphire","Kohima","Longleng","Mokokchung","Mon","Peren","Phek","Tuensang","Wokha","Zunheboto"],"Odisha":["Angul","Balangir","Balasore","Bargarh","Bhadrak","Boudh","Cuttack","Deogarh","Dhenkanal","Gajapati","Ganjam","Jagatsinghapur","Jajpur","Jharsuguda","Kalahandi","Kandhamal","Kendrapara","Kendujhar (Keonjhar)","Khordha","Koraput","Malkangiri","Mayurbhanj","Nabarangpur","Nayagarh","Nuapada","Puri","Rayagada","Sambalpur","Sonepur","Sundargarh"],"Puducherry":["Karaikal","Mahe","Pondicherry","Yanam"],"Punjab":["Amritsar","Barnala","Bathinda","Faridkot","Fatehgarh Sahib","Fazilka","Ferozepur","Gurdaspur","Hoshiarpur","Jalandhar","Kapurthala","Ludhiana","Mansa","Moga","Muktsar","Nawanshahr (Shahid Bhagat Singh Nagar)","Pathankot","Patiala","Rupnagar","Sahibzada Ajit Singh Nagar (Mohali)","Sangrur","Tarn Taran"],"Rajasthan":["Ajmer","Alwar","Banswara","Baran","Barmer","Bharatpur","Bhilwara","Bikaner","Bundi","Chittorgarh","Churu","Dausa","Dholpur","Dungarpur","Hanumangarh","Jaipur","Jaisalmer","Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Kota","Nagaur","Pali","Pratapgarh","Rajsamand","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur"],"Sikkim":["East Sikkim","North Sikkim","South Sikkim","West Sikkim"],"Tamil Nadu":["Ariyalur","Chennai","Coimbatore","Cuddalore","Dharmapuri","Dindigul","Erode","Kanchipuram","Kanyakumari","Karur","Krishnagiri","Madurai","Nagapattinam","Namakkal","Nilgiris","Perambalur","Pudukkottai","Ramanathapuram","Salem","Sivaganga","Thanjavur","Theni","Thoothukudi (Tuticorin)","Tiruchirappalli","Tirunelveli","Tiruppur","Tiruvallur","Tiruvannamalai","Tiruvarur","Vellore","Viluppuram","Virudhunagar"],"Telangana":["Adilabad","Bhadradri Kothagudem","Hyderabad","Jagtial","Jangaon","Jayashankar Bhoopalpally","Jogulamba Gadwal","Kamareddy","Karimnagar","Khammam","Komaram Bheem Asifabad","Mahabubabad","Mahabubnagar","Mancherial","Medak","Medchal","Nagarkurnool","Nalgonda","Nirmal","Nizamabad","Peddapalli","Rajanna Sircilla","Rangareddy","Sangareddy","Siddipet","Suryapet","Vikarabad","Wanaparthy","Warangal (Rural)","Warangal (Urban)","Yadadri Bhuvanagiri"],"Tripura":["Dhalai","Gomati","Khowai","North Tripura","Sepahijala","South Tripura","Unakoti","West Tripura"],"Uttar Pradesh":["Agra","Aligarh","Allahabad","Ambedkar Nagar","Amethi (Chatrapati Sahuji Mahraj Nagar)","Amroha (J.P. Nagar)","Auraiya","Azamgarh","Baghpat","Bahraich","Ballia","Balrampur","Banda","Barabanki","Bareilly","Basti","Bhadohi","Bijnor","Budaun","Bulandshahr","Chandauli","Chitrakoot","Deoria","Etah","Etawah","Faizabad","Farrukhabad","Fatehpur","Firozabad","Gautam Buddha Nagar","Ghaziabad","Ghazipur","Gonda","Gorakhpur","Hamirpur","Hapur (Panchsheel Nagar)","Hardoi","Hathras","Jalaun","Jaunpur","Jhansi","Kannauj","Kanpur Dehat","Kanpur Nagar","Kanshiram Nagar (Kasganj)","Kaushambi","Kushinagar (Padrauna)","Lakhimpur - Kheri","Lalitpur","Lucknow","Maharajganj","Mahoba","Mainpuri","Mathura","Mau","Meerut","Mirzapur","Moradabad","Muzaffarnagar","Pilibhit","Pratapgarh","RaeBareli","Rampur","Saharanpur","Sambhal (Bhim Nagar)","Sant Kabir Nagar","Shahjahanpur","Shamali (Prabuddh Nagar)","Shravasti","Siddharth Nagar","Sitapur","Sonbhadra","Sultanpur","Unnao","Varanasi"],"Uttarakhand":["Almora","Bageshwar","Chamoli","Champawat","Dehradun","Haridwar","Nainital","Pauri Garhwal","Pithoragarh","Rudraprayag","Tehri Garhwal","Udham Singh Nagar","Uttarkashi"],"West Bengal":["Alipurduar","Bankura","Birbhum","Burdwan (Bardhaman)","Cooch Behar","Dakshin Dinajpur (South Dinajpur)","Darjeeling","Hooghly","Howrah","Jalpaiguri","Kalimpong","Kolkata","Malda","Murshidabad","Nadia","North 24 Parganas","Paschim Medinipur (West Medinipur)","Purba Medinipur (East Medinipur)","Purulia","South 24 Parganas","Uttar Dinajpur (North Dinajpur)"]};
+
+function canonicalState(v){
+  const t = String(v || "").trim().toLowerCase();
+  return Object.keys(INDIA_STATES_DISTRICTS).find(s => s.toLowerCase() === t) || null;
+}
+function initCheckoutAutocomplete(){
+  const sl = document.getElementById("stateList");
+  if(sl) sl.innerHTML = Object.keys(INDIA_STATES_DISTRICTS).map(s => `<option value="${escapeHtml(s)}"></option>`).join("");
+  onCheckoutStateInput();
+}
+function onCheckoutStateInput(){
+  const stateEl = document.getElementById("f_state");
+  const dl = document.getElementById("districtList");
+  if(!stateEl || !dl) return;
+  const st = canonicalState(stateEl.value);
+  stateEl.setCustomValidity(stateEl.value && !st ? "Please choose a state from the list (full name, e.g. Kerala)" : "");
+  dl.innerHTML = st ? INDIA_STATES_DISTRICTS[st].map(d => `<option value="${escapeHtml(d)}"></option>`).join("") : "";
+}
+initCheckoutAutocomplete();
+
 function submitOrder(e){
   e.preventDefault();
   const name = document.getElementById("f_name").value.trim();
@@ -5987,7 +6014,8 @@ function submitOrder(e){
   const landmark = document.getElementById("f_landmark").value.trim();
   const town = document.getElementById("f_town").value.trim();
   const district = document.getElementById("f_district").value.trim();
-  const state = document.getElementById("f_state").value.trim();
+  const stateRaw = document.getElementById("f_state").value.trim();
+  const state = canonicalState(stateRaw) || stateRaw;
   const pin = document.getElementById("f_pin").value.trim();
   const phone1 = document.getElementById("f_phone1").value.trim();
   const phone2 = document.getElementById("f_phone2").value.trim();
@@ -5998,21 +6026,20 @@ function submitOrder(e){
   const shipLabel = tier.cost === null ? "Cash on Delivery (COD)" : (tier.cost === 0 ? "Free (4-7 days)" : `Fast Shipping ₹300/- (3-4 days)`);
   const grandTotal = tier.cost === null ? `₹${base}/- + COD charge` : `₹${base + tier.cost}/-`;
 
-  let msg = `*${cart.length} WATCH${cart.length>1?'ES':''} ORDER*\n\n`;
+  const allWatches = cart.every(i => WATCHES.some(w => w.id === i.watchId));
+  const noun = allWatches ? "WATCH" : "ITEM";
+  let msg = `*${cart.length} ${noun}${cart.length>1 ? (allWatches ? 'ES' : 'S') : ''} ORDER*\n\n`;
   cart.forEach((item, i) => {
     const cartDiscountPct = item.marketPrice ? Math.round(((item.marketPrice - item.price) / item.marketPrice) * 100) : null;
     const priceLine = cartDiscountPct !== null
       ? `Price: ₹${item.price}/- each (~₹${item.marketPrice}/-~ ${cartDiscountPct}% OFF)${item.qty>1 ? ` (₹${item.price*item.qty}/- subtotal)` : ''}`
       : `Price: ₹${item.price}/- each${item.qty>1 ? ` (₹${item.price*item.qty}/- subtotal)` : ''}`;
-    msg += `*ITEM ${i+1}*\nProduct: ${item.name}\nSize: N/A\nQuantity: ${item.qty}\n${priceLine}\nLink: ${item.link}\n\n`;
+    msg += `*ITEM ${i+1}*\nProduct: ${item.name}\nQuantity: ${item.qty}\n${priceLine}\nLink: ${item.link}\n\n`;
   });
 
-  msg += `*CUSTOMER DETAILS*\nName: ${name}\n`;
+  msg += `*CUSTOMER DETAILS*\nName: ${name}\nFull Address: ${address}\nState: ${state}\nDistrict: ${district}\nCity: ${town}\nPincode: ${pin}\nNearest Landmark: ${landmark || "N/A"}\nContact Number 1: ${phone1}\nContact Number 2: ${phone2 || "N/A"}\n`;
   if(insta) msg += `Instagram: ${insta}\n`;
-  msg += `Address: ${address}\n`;
-  if(landmark) msg += `Landmark: ${landmark}\n`;
-  msg += `Town: ${town}\nDistrict: ${district}\nState: ${state}\nPincode: ${pin}\n`;
-  msg += `Contact No.1: ${phone1}\nContact No.2: ${phone2 || "N/A"}\n\n`;
+  msg += `\n`;
   if(remarks) msg += `*REMARKS / NOTES*\n${remarks}\n\n`;
   msg += `*ORDER SUMMARY*\nBase Price: ₹${base}/-\nShipping: ${shipLabel}\n*GRAND TOTAL: ${grandTotal}*`;
 
