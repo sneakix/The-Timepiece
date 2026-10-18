@@ -2419,8 +2419,8 @@
     <form id="checkoutForm" onsubmit="submitOrder(event)">
       <div class="field"><label for="f_name">Name</label><input required id="f_name" name="name" autocomplete="shipping name" placeholder="Your name"></div>
       <div class="field"><label for="f_address">Full Address</label><textarea required id="f_address" name="address" autocomplete="shipping street-address" rows="2" placeholder="House no, street, area"></textarea></div>
-      <div class="field"><label for="f_state">State</label><input required id="f_state" name="state" list="stateList" autocomplete="off" autocapitalize="words" oninput="onCheckoutStateInput()" placeholder="Start typing, e.g. Kerala"><datalist id="stateList"></datalist></div>
-      <div class="field"><label for="f_district">District</label><input required id="f_district" name="district" list="districtList" autocomplete="off" autocapitalize="words" placeholder="Start typing your district"><datalist id="districtList"></datalist></div>
+      <div class="field"><label for="f_state">State</label><input required id="f_state" name="state" list="stateList" autocomplete="off" autocapitalize="words" oninput="onCheckoutStateInput()" placeholder="State"><datalist id="stateList"></datalist></div>
+      <div class="field"><label for="f_district">District</label><input required id="f_district" name="district" list="districtList" autocomplete="off" autocapitalize="words" placeholder="District"><datalist id="districtList"></datalist></div>
       <div class="field"><label for="f_town">City</label><input required id="f_town" name="town" autocomplete="shipping address-level2" placeholder="City / Town"></div>
       <div class="field"><label for="f_pin">Pincode</label><input required id="f_pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="shipping postal-code" placeholder="6-digit pincode"></div>
       <div class="field"><label for="f_landmark">Nearest Landmark <span class="optional">(optional)</span></label><input id="f_landmark" name="landmark" placeholder="Nearby landmark"></div>
