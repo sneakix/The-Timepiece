@@ -1068,6 +1068,16 @@
   }
   .card .body{ padding:12px 12px 14px; display:flex; flex-direction:column; gap:8px; flex:1; }
   .card .brand{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; }
+  /* Long brand names (e.g. VACHERON CONSTANTIN) used to push the heart and
+     WhatsApp icons out of the card. The brand now shrinks/wraps inside the
+     space left over; the icons never get squeezed or clipped. */
+  .brand-row{ flex-wrap:nowrap; min-height:22px; }
+  .brand-row .brand{ flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand-row .card-actions{ flex:none; margin-left:auto; }
+  @media(max-width:420px){
+    .card .brand-row .brand{ font-size:10px; letter-spacing:0.04em; }
+    .card-actions{ gap:8px; }
+  }
   .card .name{
     font-size:14.5px; font-weight:700; line-height:1.3; cursor:pointer;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
@@ -1772,6 +1782,17 @@
   .field input:invalid:not(:placeholder-shown){ border-color:var(--sale); }
   .field .optional{color:var(--muted); text-transform:none; font-weight:400; font-size:10.5px;}
 
+  /* State / District: dropdown you can also type into */
+  .combo{ position:relative; }
+  .combo input{ padding-right:42px; }
+  .combo-toggle{ position:absolute; right:0; top:0; height:100%; width:42px; background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; }
+  .combo-list{ display:none; position:absolute; left:0; right:0; top:calc(100% + 4px); max-height:220px; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--paper); border:1.5px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow-3); z-index:30; }
+  .combo-list.open{ display:block; }
+  .combo-item{ padding:11px 13px; font-size:14px; color:var(--ink); cursor:pointer; border-bottom:1px solid var(--line); }
+  .combo-item:last-child{ border-bottom:none; }
+  .combo-item.active, .combo-item:hover{ background:var(--panel); }
+  .combo-item.empty{ color:var(--muted); cursor:default; background:none; }
+
   .wa-submit{
     width:100%; padding:15px; border:none; border-radius:var(--radius-sm);
     background:var(--success); color:var(--success-ink); font-weight:900; font-size:14.5px;
@@ -2419,8 +2440,8 @@
     <form id="checkoutForm" onsubmit="submitOrder(event)">
       <div class="field"><label for="f_name">Name</label><input required id="f_name" name="name" autocomplete="shipping name" placeholder="Your name"></div>
       <div class="field"><label for="f_address">Full Address</label><textarea required id="f_address" name="address" autocomplete="shipping street-address" rows="2" placeholder="House no, street, area"></textarea></div>
-      <div class="field"><label for="f_state">State</label><input required id="f_state" name="state" list="stateList" autocomplete="off" autocapitalize="words" oninput="onCheckoutStateInput()" placeholder="State"><datalist id="stateList"></datalist></div>
-      <div class="field"><label for="f_district">District</label><input required id="f_district" name="district" list="districtList" autocomplete="off" autocapitalize="words" placeholder="District"><datalist id="districtList"></datalist></div>
+      <div class="field"><label for="f_state">State</label><div class="combo"><input required id="f_state" name="state" autocomplete="off" autocapitalize="words" role="combobox" aria-autocomplete="list" aria-controls="stateCombo" placeholder="Select or type state"><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show all states">&#9662;</button><div class="combo-list" id="stateCombo" role="listbox"></div></div></div>
+      <div class="field"><label for="f_district">District</label><div class="combo"><input required id="f_district" name="district" autocomplete="off" autocapitalize="words" role="combobox" aria-autocomplete="list" aria-controls="districtCombo" placeholder="Select or type district"><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show all districts">&#9662;</button><div class="combo-list" id="districtCombo" role="listbox"></div></div></div>
       <div class="field"><label for="f_town">City</label><input required id="f_town" name="town" autocomplete="shipping address-level2" placeholder="City / Town"></div>
       <div class="field"><label for="f_pin">Pincode</label><input required id="f_pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="shipping postal-code" placeholder="6-digit pincode"></div>
       <div class="field"><label for="f_landmark">Nearest Landmark <span class="optional">(optional)</span></label><input id="f_landmark" name="landmark" placeholder="Nearby landmark"></div>
@@ -5991,18 +6012,64 @@ function canonicalState(v){
   const t = String(v || "").trim().toLowerCase();
   return Object.keys(INDIA_STATES_DISTRICTS).find(s => s.toLowerCase() === t) || null;
 }
-function initCheckoutAutocomplete(){
-  const sl = document.getElementById("stateList");
-  if(sl) sl.innerHTML = Object.keys(INDIA_STATES_DISTRICTS).map(s => `<option value="${escapeHtml(s)}"></option>`).join("");
-  onCheckoutStateInput();
+function makeCombo(inputId, listId, getOptions, emptyMsg, onChange){
+  const input = document.getElementById(inputId), list = document.getElementById(listId);
+  if(!input || !list) return;
+  const toggle = input.parentElement.querySelector(".combo-toggle");
+  let items = [], active = -1;
+  const isOpen = () => list.classList.contains("open");
+  const close = () => { list.classList.remove("open"); active = -1; };
+  function render(showAll){
+    const opts = getOptions();
+    const q = input.value.trim().toLowerCase();
+    items = (showAll || !q) ? opts
+      : [...opts.filter(o => o.toLowerCase().startsWith(q)), ...opts.filter(o => !o.toLowerCase().startsWith(q) && o.toLowerCase().includes(q))];
+    active = -1;
+    list.innerHTML = items.length
+      ? items.map((o,i) => `<div class="combo-item" role="option" data-i="${i}">${escapeHtml(o)}</div>`).join("")
+      : `<div class="combo-item empty">${escapeHtml(emptyMsg(opts.length > 0))}</div>`;
+    list.classList.add("open");
+  }
+  function pick(i){ input.value = items[i]; close(); if(onChange) onChange(); }
+  function highlight(){
+    list.querySelectorAll(".combo-item").forEach((el,i) => el.classList.toggle("active", i === active));
+    const el = list.querySelector(".combo-item.active"); if(el) el.scrollIntoView({ block:"nearest" });
+  }
+  input.addEventListener("focus", () => { render(true); setTimeout(() => input.scrollIntoView({ block:"center", behavior:"smooth" }), 250); });
+  input.addEventListener("input", () => { render(false); if(onChange) onChange(); });
+  input.addEventListener("blur", () => setTimeout(close, 150));
+  input.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown"){ e.preventDefault(); if(!isOpen()) render(true); active = Math.min(items.length - 1, active + 1); highlight(); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); active = Math.max(0, active - 1); highlight(); }
+    else if(e.key === "Enter" && isOpen() && active >= 0){ e.preventDefault(); pick(active); }
+    else if(e.key === "Escape" && isOpen()){ e.stopPropagation(); close(); }
+  });
+  list.addEventListener("mousedown", e => e.preventDefault()); // keep input focused
+  list.addEventListener("click", e => { const it = e.target.closest(".combo-item:not(.empty)"); if(it) pick(Number(it.dataset.i)); });
+  if(toggle){
+    toggle.addEventListener("mousedown", e => e.preventDefault());
+    toggle.addEventListener("click", () => { if(isOpen()) close(); else { input.focus(); render(true); } });
+  }
 }
+let lastCheckoutState = null;
 function onCheckoutStateInput(){
   const stateEl = document.getElementById("f_state");
-  const dl = document.getElementById("districtList");
-  if(!stateEl || !dl) return;
+  const distEl = document.getElementById("f_district");
+  if(!stateEl) return;
   const st = canonicalState(stateEl.value);
   stateEl.setCustomValidity(stateEl.value && !st ? "Please choose a state from the list (full name, e.g. Kerala)" : "");
-  dl.innerHTML = st ? INDIA_STATES_DISTRICTS[st].map(d => `<option value="${escapeHtml(d)}"></option>`).join("") : "";
+  if(st && st !== lastCheckoutState){
+    lastCheckoutState = st;
+    if(distEl && distEl.value && !INDIA_STATES_DISTRICTS[st].includes(distEl.value)) distEl.value = ""; // stale district from another state
+  }
+}
+function initCheckoutAutocomplete(){
+  makeCombo("f_state", "stateCombo", () => Object.keys(INDIA_STATES_DISTRICTS), () => "No matching state", onCheckoutStateInput);
+  makeCombo("f_district", "districtCombo",
+    () => { const st = canonicalState(document.getElementById("f_state").value); return st ? INDIA_STATES_DISTRICTS[st] : []; },
+    hasOptions => hasOptions ? "No match - you can type your district" : "Select a state first");
+  const stateEl = document.getElementById("f_state");
+  if(stateEl) stateEl.addEventListener("change", () => { const st = canonicalState(stateEl.value); if(st) stateEl.value = st; onCheckoutStateInput(); });
 }
 initCheckoutAutocomplete();
 
