@@ -1072,7 +1072,8 @@
      WhatsApp icons out of the card. The brand now shrinks/wraps inside the
      space left over; the icons never get squeezed or clipped. */
   .brand-row{ flex-wrap:nowrap; min-height:22px; }
-  .brand-row .brand{ flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card .brand-row{ align-items:flex-start; }
+  .brand-row .brand{ flex:1 1 0; min-width:0; display:flex; align-items:center; min-height:22px; white-space:normal; overflow-wrap:anywhere; line-height:1.25; }
   .brand-row .card-actions{ flex:none; margin-left:auto; }
   @media(max-width:420px){
     .card .brand-row .brand{ font-size:10px; letter-spacing:0.04em; }
@@ -2490,7 +2491,18 @@
                         rounded. Leave blank for no discount.
    COD Available    -> true/false, shows "Cash on Delivery Available" on
                         the item page - only selected products support COD
-   New Arrival      -> true/false, shows "NEW" tag + New Arrivals filter
+   New Arrival      -> true/false. The NEW tag, the "New Arrivals" filter and the
+                        ranking boost only apply while the product is ACTIVE-new:
+                        New Arrival = TRUE and its date is within NEW_ARRIVAL_DAYS.
+   New Arrival Date -> date the product became new (aliases: "Date Added",
+                        "Updated On"). Accepted: 2026-10-19, 19/10/2026,
+                        19-10-2026, 19.10.2026 (day-first; if the middle number
+                        is above 12 it is read as month/day) or "19 Oct 2026".
+                        Blank/unreadable = stays new (cannot expire without a
+                        date). The site never writes to the sheet - it just
+                        stops treating the product as new once the date is more
+                        than NEW_ARRIVAL_DAYS old. The Apps Script keeps the
+                        sheet in step (stamps date, flips TRUE -> FALSE).
    Sale             -> true/false, marketing-only SALE tag with no real
                         price cut. Ignored if Market Price already produces
                         a real discount % (the % badge takes priority).
@@ -2507,7 +2519,15 @@
                         sort (still shown normally under Price/A-Z sorts) -
                         use it to bump specific items without hiding "1"
                         rows or reordering the sheet itself.
+                        Default/Featured order (see newArrivalRank): priority 2
+                        first (active-new ones leading), then active-new
+                        priority 1, then everything else; newest-added first
+                        inside each group.
    ========================================================= */
+// How many days a product stays "new" after its New Arrival Date.
+// Must match EXPIRE_DAYS in the Google Apps Script.
+const NEW_ARRIVAL_DAYS = 20;
+
 const WHATSAPP_NUMBER = "919778781170"; // <-- TODO: replace with your real WhatsApp number, country code + number, no + or spaces
 const SITE_URL = "https://thetimepiece.pages.dev/"; // <-- update again if you move to a custom domain
 
@@ -2662,6 +2682,49 @@ function hashId(str){
   return h;
 }
 
+// Returns a local-midnight Date, or null if blank/unreadable.
+function parseSheetDate(raw){
+  const s = String(raw == null ? "" : raw).trim();
+  if(!s) return null;
+  const make = (y, m, d) => {
+    const dt = new Date(y, m - 1, d);
+    return (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) ? dt : null;
+  };
+  let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?:[T\s].*)?$/);
+  if(m) return make(+m[1], +m[2], +m[3]);
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2}|\d{4})(?:[T\s].*)?$/);
+  if(m){
+    const a = +m[1], b = +m[2], y = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+    return b > 12 ? make(y, a, b) : make(y, b, a); // day-first unless the middle number > 12
+  }
+  // Text dates ("19 Oct 2026"): need a month word and a year, so junk like "12" or "Oct 19" is never guessed at.
+  if(/[a-z]{3}/i.test(s) && /\d{4}/.test(s)){
+    const t = new Date(s);
+    if(!isNaN(t.getTime()) && t.getFullYear() >= 2000) return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  return null;
+}
+
+// New Arrival = TRUE and not older than NEW_ARRIVAL_DAYS. No readable date = stays new.
+function isActiveNewArrival(flag, rawDate){
+  if(!flag) return false;
+  const d = parseSheetDate(rawDate);
+  if(!d) return true;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today - d) / 86400000) <= NEW_ARRIVAL_DAYS;
+}
+
+// One ranking for the default sort and the homepage Featured grid.
+// 3 = priority 2 + new, 2 = priority 2, 1 = priority 1 + new, 0 = the rest.
+function newArrivalRank(w){
+  if(w.listedPriority === 2) return w.isNew ? 3 : 2;
+  return w.isNew ? 1 : 0;
+}
+function compareFeaturedOrder(a, b){
+  return (newArrivalRank(b) - newArrivalRank(a)) || (b.order - a.order);
+}
+
 const SUBCAT_KEYS = ["Sub Category", "Sub_Category", "SubCategory", "Subcategory", "Sub category"];
 function rowsToWatches(rows){
   // Old layout (no Sub Category column anywhere): every row is a watch and
@@ -2715,6 +2778,7 @@ function rowsToWatches(rows){
     // (paragraph breaks on blank lines) - no tag parsing, no quality-grade
     // concept. Raw value stored here, escaped at render time.
     const description = (r["Description"] || "").trim();
+    const rawNewDate = ["New Arrival Date", "Date Added", "Updated On"].map(k => String(r[k] ?? "").trim()).find(Boolean) || "";
 
     return {
       id: hashId(idBasis),
@@ -2736,7 +2800,7 @@ function rowsToWatches(rows){
         return isNaN(n) ? null : n;
       })(),
       codAvailable: toBool(r["COD Available"]),
-      isNew: toBool(r["New Arrival"]),
+      isNew: isActiveNewArrival(toBool(r["New Arrival"]), rawNewDate),
       isSale: toBool(r["Sale"]),
       // Per-product flag for the homepage "Special Offers" card - mark
       // any product TRUE to include it in the current seasonal sale. The
@@ -4759,7 +4823,7 @@ function getFilteredWatches(){
     if(activeSort === "price_low") return a.price - b.price;
     if(activeSort === "price_high") return b.price - a.price;
     if(activeSort === "az") return a.name.localeCompare(b.name);
-    if(activeSort === "newest") return b.order - a.order; // pure recency, no priority boost - see "Default" below for that
+    if(activeSort === "newest") return (Number(b.isNew) - Number(a.isNew)) || (b.order - a.order); // active new arrivals first, then recency; no priority-tier boost
     // Default ("latest"): within an Offers tier, the tier's own price
     // band surfaces first - e.g. Under ₹1,500 is technically 0-1499, but
     // showing the 1000-1499 items first (before repeating the same
@@ -4767,11 +4831,8 @@ function getFilteredWatches(){
     // each tier feel distinct instead of just a superset of the last.
     const bandA = tierBandPriority(a), bandB = tierBandPriority(b);
     if(bandA !== bandB) return bandB - bandA;
-    // Website_Listed=2 items surface first as a group (still ordered by
-    // recency within that group), then everything else by recency -
-    // "1" items are never hidden, "2" just gets priority placement.
-    if(a.listedPriority !== b.listedPriority) return b.listedPriority - a.listedPriority;
-    return b.order - a.order; // latest-added first: later sheet rows = newer products
+    // Shared ranking (priority 2 / active new arrivals / rest), then latest-added first.
+    return compareFeaturedOrder(a, b);
   });
 }
 
@@ -4977,10 +5038,7 @@ const HOME_FEATURED_PAGE_SIZE = 8;
 // ranked by sheet priority (Website_Listed) then newest-added row first.
 function featuredPool(){ return [...WATCHES, ...ACCESSORIES]; }
 function getFeaturedHomeWatches(n){
-  return featuredPool().sort((a, b) => {
-    if(a.listedPriority !== b.listedPriority) return b.listedPriority - a.listedPriority;
-    return b.order - a.order;
-  }).slice(0, n);
+  return featuredPool().sort(compareFeaturedOrder).slice(0, n);
 }
 
 // Renders the homepage's "Featured" preview grid. Same card markup as
