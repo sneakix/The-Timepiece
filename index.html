@@ -40,7 +40,7 @@
   // paint - otherwise the browser briefly shows the full homepage (hero
   // cards, category chips, grid) before the data finishes loading and the
   // product overlay opens on top of it, which reads as a laggy flash.
-  if(/^#watch-\d+$/.test(location.hash) || /^#(mens|womens|premium|offers|offers-500|offers-1000|offers-1500|offers-2000|seasonal-offers|all-products)$/.test(location.hash)){
+  if(/^#(watch|accessory)-\d+$/.test(location.hash) || /^#(mens|womens|premium|offers|offers-500|offers-1000|offers-1500|offers-2000|seasonal-offers|all-products)$/.test(location.hash)){
     document.documentElement.classList.add("deep-link-pending");
   }
 </script>
@@ -2533,6 +2533,13 @@ const NEW_ARRIVAL_DAYS = 20;
 const WHATSAPP_NUMBER = "919778781170"; // <-- TODO: replace with your real WhatsApp number, country code + number, no + or spaces
 const SITE_URL = "https://thetimepiece.pages.dev/"; // <-- update again if you move to a custom domain
 
+// Product deep-link hashes: watches use #watch-<id>, every other product
+// (spectacles, bags, belts, jackets, ...) uses #accessory-<id>. Either
+// prefix is accepted on load (old shared #watch-<id> links to accessories
+// keep working) and is then rewritten to the correct one.
+const PRODUCT_HASH_RE = /^#(?:watch|accessory)-(\d+)$/;
+function productHash(p){ return (p && p.productType !== undefined ? "#accessory-" : "#watch-") + p.id; }
+
 // Per-card "WhatsApp Enquiry" button (the small icon on each product card,
 // separate from the full checkout-cart WhatsApp flow used elsewhere in
 // this file). Built and ready to go, but switched OFF for now since
@@ -2551,7 +2558,7 @@ const WA_ICON_SVG = '<svg class="wa-ico" viewBox="0 0 24 24" aria-hidden="true" 
 // later. The whole message goes through encodeURIComponent so spaces,
 // ₹, &, #, quotes, etc. can't break the link.
 function buildWhatsAppEnquiryUrl(watch){
-  const link = `${SITE_URL}#watch-${watch.id}`;
+  const link = `${SITE_URL}${productHash(watch)}`;
   const noun = watch.productType === undefined ? "watch" : "product";
   let msg = `Hi, I'm interested in this ${noun}:\nProduct: ${watch.name}\n`;
   if(watch.price) msg += `Price: ₹${watch.price.toLocaleString("en-IN")}\n`;
@@ -2916,7 +2923,7 @@ function applyCatalogRows(rawRows, isLiveFetch){
     if(!hashViewApplied){
       hashViewApplied = true;
       const h = location.hash;
-      if(h && h !== "#size-guide" && h !== "#policies" && !/^#watch-\d+$/.test(h)){
+      if(h && h !== "#size-guide" && h !== "#policies" && !PRODUCT_HASH_RE.test(h)){
         applyViewFromHash(h);
         // Section hashes (#mens, #offers, etc.) always finish routing
         // synchronously right here (unlike a #watch-<id> hash, which can
@@ -2992,7 +2999,7 @@ function routeToWatchFromHashOnLoad(isLiveFetch){
     document.documentElement.classList.remove("deep-link-pending");
     return;
   }
-  const match = location.hash.match(/^#watch-(\d+)$/);
+  const match = location.hash.match(PRODUCT_HASH_RE);
   if(!match){
     document.documentElement.classList.remove("deep-link-pending");
     return;
@@ -4169,7 +4176,7 @@ window.addEventListener("popstate", () => {
   // also re-run applyViewFromHash("#mens") here and reset filters/page
   // state that closeItemDetailFromHistory() is about to correctly leave
   // untouched.
-  if(itemDetailWatchId !== null || /^#watch-\d+$/.test(hash) || hash === "#size-guide" || hash === "#policies" || currentFullPage) return;
+  if(itemDetailWatchId !== null || PRODUCT_HASH_RE.test(hash) || hash === "#size-guide" || hash === "#policies" || currentFullPage) return;
   applyViewFromHash(hash);
 });
 
@@ -5115,7 +5122,7 @@ let itemDetailPhotoIndex = 0;
 // function only ever runs for actual back/forward across a chain of
 // products, never as a side effect of our own writes.
 function routeToWatchFromHash(){
-  const match = location.hash.match(/^#watch-(\d+)$/);
+  const match = location.hash.match(PRODUCT_HASH_RE);
   if(!match){
     // Backed all the way out of the product chain (or forward past it)
     // onto a non-product hash - close the overlay via the pure,
@@ -5135,6 +5142,8 @@ function routeToWatchFromHash(){
     // a second history entry on top of the one the browser just landed
     // on and re-save scroll position mid-chain.
     renderProductDetailView(id);
+    // Fix wrong prefix (e.g. old #watch-<id> link to an accessory).
+    if(location.hash !== productHash(watch)) history.replaceState(history.state, "", productHash(watch));
   } else {
     // The linked product no longer exists (removed from the sheet) -
     // drop the hash and fall back to a normal homepage rather than
@@ -5308,7 +5317,7 @@ function openItemDetail(watchId, isFreshDeepLink){
   // Keep the URL in sync so this exact product can always be re-opened
   // (bookmarked, shared, or reached via a WhatsApp order link) straight
   // back to its own detail page.
-  history.pushState({ itemDetail: watch.id }, "", `#watch-${watch.id}`);
+  history.pushState({ itemDetail: watch.id }, "", productHash(watch));
 }
 
 // The nav's in-app Back button, while viewing a product OR a full page
@@ -5618,7 +5627,7 @@ function addToCart(watchId){
   // the page is open, so tapping it in WhatsApp opens the exact product
   // (all photos, price, specs) rather than just one flat image. Requires
   // SITE_URL above to be set to wherever the site is actually hosted.
-  const link = `${SITE_URL}#watch-${watch.id}`;
+  const link = `${SITE_URL}${productHash(watch)}`;
 
   // If this watch is already in the cart, just bump its quantity instead
   // of adding a second, separate line for the same item.
