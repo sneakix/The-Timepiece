@@ -3835,6 +3835,23 @@ function categoryScopeWatches(){
 // default, so there's nothing an "All" card would do that arriving at
 // the section doesn't already do. The breadcrumb's section segment
 // doubles as the way back to "all segments" once one is picked.
+// Fixed display order for sub-categories inside a product category.
+// Keyed by accessoryCatKey() of the category ("Bags" -> "bag"). Each pattern
+// matches loosely, so "Handbag", "Hand Bag", "Tote Bag", "Duffle"/"Duffel",
+// "Sling/Side Bag", "Trekking"/"Trecking" all land in the right slot.
+// Anything that matches no pattern goes after these, in sheet order.
+const ACCESSORY_SUBCATEGORY_ORDER = {
+  bag: [/hand/i, /tote/i, /duff/i, /side|sling/i, /tre[ck]/i]
+};
+function sortAccessorySubcats(list){
+  const rules = ACCESSORY_SUBCATEGORY_ORDER[accessoryCatKey(activeAccessoryCat)];
+  if(!rules) return list;
+  const rank = s => { const i = rules.findIndex(r => r.test(s)); return i < 0 ? rules.length : i; };
+  return list.map((s, i) => ({ s, i }))
+    .sort((a, b) => (rank(a.s) - rank(b.s)) || (a.i - b.i))
+    .map(x => x.s);
+}
+
 function renderCategories(){
   const isAcc = activeSection === "accessories";
   const scoped = categoryScopeWatches();
@@ -3845,7 +3862,7 @@ function renderCategories(){
   const extra = [...present].filter(p => !knownLower.has(p.toLowerCase())).sort((a,b)=>a.localeCompare(b));
   // Watches use the fixed CATEGORY_ORDER; other categories keep sheet order
   // (Website_Listed priority first), since there's no universal order for them.
-  const cats = isAcc ? [...present].filter(Boolean) : [...known, ...extra];
+  const cats = isAcc ? sortAccessorySubcats([...present].filter(Boolean)) : [...known, ...extra];
   const strip = document.getElementById("catStrip");
   const stripHeading = document.getElementById("catStripHeading");
   if(stripHeading) stripHeading.style.display = cats.length ? "" : "none";
@@ -4741,7 +4758,7 @@ function renderFilterSheet(){
     const known = CATEGORY_ORDER.filter(c => c !== "All" && [...present].some(p => p.toLowerCase() === c.toLowerCase()));
     const knownLower = new Set(known.map(c => c.toLowerCase()));
     const extra = [...present].filter(p => !knownLower.has(p.toLowerCase())).sort((a,b)=>a.localeCompare(b));
-    const types = ["All", ...(activeSection === "accessories" ? [...present].filter(Boolean) : [...known, ...extra])];
+    const types = ["All", ...(activeSection === "accessories" ? sortAccessorySubcats([...present].filter(Boolean)) : [...known, ...extra])];
     typeRow.innerHTML = types.map(t=>{
       const active = t === "All" ? activeCategory === "All" : normalizeCategoryValue(activeCategory).toLowerCase() === t.toLowerCase();
       return `<button class="filter-chip ${active?'active':''}" onclick="setCategory('${escForInlineJs(t)}')">${escapeHtml(t)}</button>`;
