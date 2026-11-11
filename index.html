@@ -4619,12 +4619,19 @@ function openAccessoryCategory(cat){
 // sorted, so sheet row order/priority controls nav order too) - this is
 // what turns into one nav/hamburger button per real category rather than
 // a hardcoded Spectacles/Belts/Chains list.
+// Fixed display order for product categories. Every nav/menu/footer/homepage
+// list is built from accessoryCategoriesPresent(), so sorting here fixes the
+// order everywhere at once. Jackets is NOT a permanent category (it only
+// appears once the sheet has Jacket rows) - it just sorts before Belts when
+// present. Categories not listed here go after these, in sheet order.
+const ACCESSORY_CATEGORY_ORDER = ["Spectacles", "Bags", "Jackets", "Belts"];
 function accessoryCategoriesPresent(){
   const list = [...ACCESSORY_DEFAULT_CATEGORIES];
   ACCESSORIES.forEach(a => {
     if(a.productCategory && !list.includes(a.productCategory)) list.push(a.productCategory);
   });
-  return list;
+  const rank = c => { const i = ACCESSORY_CATEGORY_ORDER.findIndex(o => accessoryCatKey(o) === accessoryCatKey(c)); return i < 0 ? ACCESSORY_CATEGORY_ORDER.length : i; };
+  return list.map((c, i) => ({ c, i })).sort((a, b) => (rank(a.c) - rank(b.c)) || (a.i - b.i)).map(x => x.c);
 }
 
 // Rebuilds the per-category nav buttons (top nav strip + hamburger) from
@@ -5053,12 +5060,12 @@ function renderGrid(){
 // whole catalog, unaffected by whatever filters happen to be active on
 // the Collection page, since this is a homepage-only preview.
 // How many Featured items are currently visible on the homepage grid -
-// starts at 8, grows by 8 each time "Show More" is tapped (see
+// starts at 12, grows by 12 each time "Show More" is tapped (see
 // showMoreHomeFeatured below). Lives at module scope so it survives a
 // catalog refresh (applyCatalogRows calling renderHomeFeatured again)
 // without resetting the user's already-expanded view.
-let homeFeaturedVisibleCount = 8;
-const HOME_FEATURED_PAGE_SIZE = 8;
+let homeFeaturedVisibleCount = 12;
+const HOME_FEATURED_PAGE_SIZE = 12;
 
 // Featured = every product, any category (watch, spectacle, bag, belt...),
 // ranked by sheet priority (Website_Listed) then newest-added row first.
@@ -5462,7 +5469,7 @@ function getSimilarWatches(watch, n){
 }
 
 function renderSimilarProductsHtml(watch){
-  const similar = getSimilarWatches(watch, 6);
+  const similar = getSimilarWatches(watch, 12);
   if(similar.length === 0) return "";
   return `
     <div class="item-detail-similar">
