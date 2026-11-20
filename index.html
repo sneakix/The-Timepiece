@@ -40,7 +40,7 @@
   // paint - otherwise the browser briefly shows the full homepage (hero
   // cards, category chips, grid) before the data finishes loading and the
   // product overlay opens on top of it, which reads as a laggy flash.
-  if(/^#(watch|accessory)-\d+$/.test(location.hash) || /^#(mens|womens|premium|offers|offers-500|offers-1000|offers-1500|offers-2000|seasonal-offers|all-products)$/.test(location.hash)){
+  if(/^#(watch|accessory)-\d+$/.test(location.hash) || /^#(mens|womens|couple|premium|offers|offers-500|offers-1000|offers-1500|offers-2000|seasonal-offers|all-products)$/.test(location.hash)){
     document.documentElement.classList.add("deep-link-pending");
   }
 </script>
@@ -2050,6 +2050,10 @@
       <img src="images/hero-womens.jpg" alt="Woman wearing a slim analog watch with a leather strap">
       <div class="gender-card-overlay"><span class="gender-card-label">Women's Watches</span></div>
     </button>
+    <button class="gender-card gender-card-wide" onclick="selectGenderCategory('couple')" aria-label="Shop Couple Watches">
+      <img src="images/hero-couple.jpg" alt="Matching his and hers couple watches">
+      <div class="gender-card-overlay"><span class="gender-card-label">Couple Watches</span></div>
+    </button>
     <button class="gender-card gender-card-wide" onclick="selectGenderCategory('unisex')" aria-label="Shop Unisex Watches">
       <img src="images/hero-unisex.jpg" alt="Unisex watch suited for anyone">
       <div class="gender-card-overlay"><span class="gender-card-label">Unisex Watches</span></div>
@@ -2106,6 +2110,10 @@
   <button class="ap-gender-tile" onclick="selectGenderCategory('womens')" aria-label="Shop Women's Watches">
     <img src="images/hero-womens.jpg" alt="Woman wearing a slim analog watch with a leather strap" loading="lazy">
     <div class="ap-gender-tile-overlay"><span class="ap-gender-tile-label">Women's</span></div>
+  </button>
+  <button class="ap-gender-tile" onclick="selectGenderCategory('couple')" aria-label="Shop Couple Watches">
+    <img src="images/hero-couple.jpg" alt="Matching his and hers couple watches" loading="lazy">
+    <div class="ap-gender-tile-overlay"><span class="ap-gender-tile-label">Couple</span></div>
   </button>
   <button class="ap-gender-tile" onclick="selectGenderCategory('unisex')" aria-label="Shop Unisex Watches">
     <img src="images/hero-unisex.jpg" alt="Unisex watch suited for anyone" loading="lazy">
@@ -2191,6 +2199,7 @@
       <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); showAllProducts();">All Watches</button>
       <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('mens')">Men's Watches</button>
       <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('womens')">Women's Watches</button>
+      <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('couple')">Couple Watches</button>
       <button class="hamburger-link hamburger-sublink" onclick="closeHamburger(); selectGenderCategory('unisex')">Unisex Watches</button>
     </div>
     <!-- One link per distinct Category value actually present in the
@@ -2490,8 +2499,10 @@
                         the watch (a case for an automatic movement can
                         just say "Automatic" here instead of "Analog") -
                         also feeds the segment chips (see watchSegments())
-   Gender           -> Men / Women / Unisex - anything else defaults to
-                        Unisex (shown under both) rather than disappearing
+   Gender           -> Men / Women / Couple / Unisex - anything else
+                        defaults to Unisex (shown under both Men's and
+                        Women's) rather than disappearing. Couple watches
+                        show ONLY under Couple Watches.
    Case Size (mm)   -> numeric, shown in the spec list alongside Gender
                         (no filter is built for this - it's informational
                         only)
@@ -2769,12 +2780,16 @@ function rowsToWatches(rows){
     // Anything missing or not recognized defaults to Unisex (shown under
     // both Men's and Women's) rather than disappearing from both - safer
     // while the sheet is still being backfilled with this column.
-    // Internally represented as M / W / MW to match the existing
+    // Internally represented as M / W / C (Couple) / MW to match the existing
     // gender-matching helpers (watchMatchesGender etc).
     const genderRaw = (r["Gender"] || "").trim().toUpperCase();
     // Watch-only: other categories (Spectacles/Bags/Belts) don't support
     // gender, so the Gender cell is never read for them - always neutral.
-    const gender = !isWatchRow ? "MW" : genderRaw === "MEN" ? "M" : genderRaw === "WOMEN" ? "W" : "MW";
+    const gender = !isWatchRow ? "MW"
+      : genderRaw === "MEN" ? "M"
+      : genderRaw === "WOMEN" ? "W"
+      : /^COUPLES?$/.test(genderRaw) ? "C"
+      : "MW";
     const explicitId = (r["Product ID"] || r["SKU"] || r["ID"] || "").trim();
     // Two rows can legitimately share the same brand/name/category (e.g.
     // the same watch listed twice, or two dial-color variants under one
@@ -3119,7 +3134,7 @@ let hasSeasonalOffer = false;
 let suppressViewHashPush = false;
 let hashViewApplied = false;
 let activeFilter = "all";       // all | new | sale | under2000 | under1500 | under1000 | premium3000
-let activeGender = null;        // null | "M" | "W" - independent of segment now that Gender is its own sheet column
+let activeGender = null;        // null | "M" | "W" | "C" | "MW" - independent of segment now that Gender is its own sheet column
 // activeCategory is the SEGMENT filter - "All", or one Category value
 // (Analog/Digital/Chronograph/Smartwatch/Automatic/Mechanical/etc,
 // whatever actually appears in the sheet) - see
@@ -3785,6 +3800,9 @@ function heartGlyph(filled){
 }
 
 function watchMatchesGender(watch, g){
+  // Couple is its own bucket: only couple-tagged watches, and unisex
+  // ("MW") watches must not leak into it the way they do for M / W.
+  if(g === "C") return watch.gender === "C";
   return watch.gender === "MW" || watch.gender === g;
 }
 
@@ -3965,6 +3983,7 @@ function updatePageChrome(){
   if(activeSection === "accessories") label = activeAccessoryCat;
   else if(activeGender === "M") label = "Men's Watches";
   else if(activeGender === "W") label = "Women's Watches";
+  else if(activeGender === "C") label = "Couple Watches";
   else if(activeGender === "MW") label = "Unisex Watches";
   else if(activeFilter === "premium3000") label = "Premium";
   else if(activeFilter === "offers") label = "Offers";
@@ -4061,6 +4080,9 @@ function buildSectionBreadcrumbSegs(){
   } else if(activeGender === "W"){
     segs.push({ label:"Watches", onclick:"showAllProducts()" });
     segs.push({ label:"Women's", onclick:"selectGenderCategory('womens')" });
+  } else if(activeGender === "C"){
+    segs.push({ label:"Watches", onclick:"showAllProducts()" });
+    segs.push({ label:"Couple", onclick:"selectGenderCategory('couple')" });
   } else if(activeGender === "MW"){
     segs.push({ label:"Watches", onclick:"showAllProducts()" });
     segs.push({ label:"Unisex", onclick:"selectGenderCategory('unisex')" });
@@ -4142,6 +4164,7 @@ function viewKeyAndHash(){
   if(onWelcomePage) return { key: null, hash: "" };
   if(activeGender === "M") return { key: "mens", hash: "#mens" };
   if(activeGender === "W") return { key: "womens", hash: "#womens" };
+  if(activeGender === "C") return { key: "couple", hash: "#couple" };
   if(activeGender === "MW") return { key: "unisex", hash: "#unisex" };
   if(activeFilter === "premium3000") return { key: "premium", hash: "#premium" };
   if(activeFilter === "offers") return { key: "offers", hash: "#offers" };
@@ -4178,6 +4201,7 @@ function applyViewFromHash(hash){
   suppressViewHashPush = true;
   if(hash === "#mens") selectGenderCategory("mens");
   else if(hash === "#womens") selectGenderCategory("womens");
+  else if(hash === "#couple") selectGenderCategory("couple");
   else if(hash === "#unisex") selectGenderCategory("unisex");
   else if(hash === "#premium") selectPriceTierHero("premium3000");
   else if(hash === "#offers") selectPriceTierHero("offers");
@@ -4236,7 +4260,7 @@ function setGender(g){
 // Entry point for the two large homepage cards, and for the "Men's
 // Watches"/"Women's Watches" links in the hamburger menu.
 function selectGenderCategory(gender){
-  setGender(gender === "womens" ? "W" : gender === "unisex" ? "MW" : "M");
+  setGender(gender === "womens" ? "W" : gender === "couple" ? "C" : gender === "unisex" ? "MW" : "M");
 }
 
 // Drops back to the unisex "All" view without touching type/brand/size
@@ -4711,7 +4735,7 @@ function renderSelectedFilters(){
   // one didn't actually leave the page it named.
   activeBrands.forEach(b => chips.push({ label:b, onclick:`removeBrand('${escForInlineJs(b)}')` }));
   if(activeCategory !== "All") chips.push({ label: activeCategory, onclick:`setCategory('All')` });
-  if(activeGender) chips.push({ label: activeGender === "M" ? "Men" : activeGender === "W" ? "Women" : "Unisex", onclick:`setGenderFilter('All')` });
+  if(activeGender) chips.push({ label: activeGender === "M" ? "Men" : activeGender === "W" ? "Women" : activeGender === "C" ? "Couple" : "Unisex", onclick:`setGenderFilter('All')` });
   if(filterNewOnly) chips.push({ label:"New Arrivals", onclick:`toggleNewOnly()` });
   if(filterSaleOnly) chips.push({ label:"On Sale", onclick:`toggleSaleOnly()` });
   if(activeAvailFilters.has("cod")) chips.push({ label:"Cash on Delivery Available (COD)", onclick:`removeAvailFilter('cod')` });
@@ -4794,7 +4818,7 @@ function renderFilterSheet(){
   // chip needed here.
   const genderRow = document.getElementById("filterGenderRow");
   if(genderRow){
-    const genderOptions = [["All","All"], ["M","Men"], ["W","Women"], ["MW","Unisex"]];
+    const genderOptions = [["All","All"], ["M","Men"], ["W","Women"], ["C","Couple"], ["MW","Unisex"]];
     genderRow.innerHTML = genderOptions.map(([key,label])=>{
       const active = key === "All" ? activeGender === null : activeGender === key;
       return `<button class="filter-chip ${active?'active':''}" onclick="setGenderFilter('${key}')">${label}</button>`;
@@ -5552,7 +5576,7 @@ function renderItemDetail(){
 
   // Full spec list - only rows with an actual value are shown, so a
   // blank Case Size cell just quietly omits that line.
-  const genderLabel = watch.gender === "W" ? "Her" : watch.gender === "M" ? "Him" : "Unisex";
+  const genderLabel = watch.gender === "W" ? "Her" : watch.gender === "M" ? "Him" : watch.gender === "C" ? "Couple" : "Unisex";
   const specRows = [
     ["Type", watch.category],
     // Gender and Case Size are watch-only: accessories (productType is
@@ -5924,7 +5948,7 @@ function renderComparePage(container){
         <dl class="compare-attr-list">
           <div class="compare-attr-row"><dt>Brand</dt><dd>${escapeHtml(s.brand)}</dd></div>
           ${s.category ? `<div class="compare-attr-row"><dt>Type</dt><dd>${escapeHtml(s.category)}</dd></div>` : ''}
-          ${s.productType === undefined ? `<div class="compare-attr-row"><dt>For</dt><dd>${s.gender === "W" ? "Her" : s.gender === "M" ? "Him" : "Unisex"}</dd></div>` : ''}
+          ${s.productType === undefined ? `<div class="compare-attr-row"><dt>For</dt><dd>${s.gender === "W" ? "Her" : s.gender === "M" ? "Him" : s.gender === "C" ? "Couple" : "Unisex"}</dd></div>` : ''}
           ${s.caseSize ? `<div class="compare-attr-row"><dt>Case Size</dt><dd>${escapeHtml(s.caseSize)}mm</dd></div>` : ''}
           ${showCod ? `<div class="compare-attr-row"><dt>Cash on Delivery</dt><dd>${s.codAvailable ? "Available" : "Not available"}</dd></div>` : ''}
           ${descLines.length ? `<div class="compare-attr-row compare-attr-row--plain"><dd>${descLines.map(l => escapeHtml(l)).join(" · ")}</dd></div>` : ''}
