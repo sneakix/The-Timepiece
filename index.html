@@ -2239,6 +2239,18 @@
       <div class="policy-block">
         <div class="policy-num">2</div>
         <div>
+          <h3 class="policy-title">Shipping &amp; Payment Policy</h3>
+          <ul class="policy-list">
+            <li><strong>Prepaid Orders:</strong> Free shipping on all prepaid orders.</li>
+            <li><strong>Cash on Delivery (COD):</strong> Applicable shipping charges must be paid in advance when placing the order. The remaining product amount is payable at the time of delivery.</li>
+          </ul>
+          <p style="margin-top:10px;">Shipping charges may vary depending on the delivery location.</p>
+        </div>
+      </div>
+
+      <div class="policy-block">
+        <div class="policy-num">3</div>
+        <div>
           <h3 class="policy-title">Replacement Policy (360° Unboxing Video Rule)</h3>
           <p>We offer a replacement only if the product is damaged, you receive the wrong color, or you receive the wrong item due to an error on our part.</p>
           <p>To be eligible for a replacement, you must provide a single continuous 360° unboxing video.</p>
@@ -2254,7 +2266,7 @@
       </div>
 
       <div class="policy-block">
-        <div class="policy-num">3</div>
+        <div class="policy-num">4</div>
         <div>
           <h3 class="policy-title">Reporting Window</h3>
           <p>Any complaint regarding damaged or incorrect products must be reported within 24 hours of the delivery time recorded by the courier. Complaints received after 24 hours will not be entertained.</p>
@@ -2262,17 +2274,16 @@
       </div>
 
       <div class="policy-block">
-        <div class="policy-num">4</div>
+        <div class="policy-num">5</div>
         <div>
           <h3 class="policy-title">Return and Refund Policy</h3>
           <p>At THE TIMEPIECE, all products are sold under a No Return &amp; No Refund policy. All sales are final once an order is placed.</p>
           <p>However, selected products may be eligible for Cash on Delivery (COD). If applicable, this will be clearly stated on the product page.</p>
-          <p>If a product does not explicitly mention that COD is available, standard prepaid payment applies.</p>
         </div>
       </div>
 
       <div class="policy-block">
-        <div class="policy-num">5</div>
+        <div class="policy-num">6</div>
         <div>
           <h3 class="policy-title">Contact Us</h3>
           <p>If you have any questions regarding your order or these policies, please contact us through our official WhatsApp or Instagram account.</p>
@@ -2425,7 +2436,6 @@
         <div class="cart-subline"><span>Base Price</span><span id="sumBase"></span></div>
         <div class="cart-subline"><span>Shipping</span><span id="sumShip"></span></div>
         <div class="cart-total"><span>Grand Total</span><span id="sumTotal"></span></div>
-        <div class="cart-subline cart-cod-note" id="sumCodNote" style="display:none; justify-content:flex-end;"></div>
       </div>
 
       <button class="checkout-btn" id="checkoutBtn" onclick="openCheckout()" disabled>Place Order</button>
@@ -3080,16 +3090,16 @@ function loadWatchesFromSheet(){
   });
 }
 
-const SHIPPING_TIERS = {
-  free: { label:"Free Shipping", desc:"Delivered in 4-7 days", cost:0 },
-  fast: { label:"Fast Shipping (+₹300)", desc:"Delivered in 3-4 days", cost:300 },
-  cod:  { label:"Cash on Delivery", desc:"COD charge: ₹350-500 (based on weight) - confirmed on WhatsApp", cost:null }
-};
 // Single source of truth for the COD charge range - referenced by the
-// shipping option description above, the cart totals box, AND the
+// shipping option description below, the cart totals box, AND the
 // WhatsApp order message, so all three always agree with each other.
 const COD_CHARGE_MIN = 350;
 const COD_CHARGE_MAX = 500;
+const SHIPPING_TIERS = {
+  free: { label:"Free Shipping (Prepaid)", desc:"Free on all prepaid orders - delivered in 4-7 days", cost:0 },
+  fast: { label:"Fast Shipping (+₹300)", desc:"Delivered in 3-4 days", cost:300 },
+  cod:  { label:"Cash on Delivery", desc:`COD charge ₹${COD_CHARGE_MIN}-${COD_CHARGE_MAX}/- extra (varies by weight and location)`, cost:null }
+};
 
 /* ============ App logic ============ */
 
@@ -6046,23 +6056,10 @@ function renderTotals(){
   totalsBox.style.display = "block";
   const base = cart.reduce((sum,i)=>sum+i.price*i.qty, 0);
   const tier = SHIPPING_TIERS[selectedShipping];
-  const shipLabel = tier.cost === null ? "To be confirmed" : (tier.cost === 0 ? "Free" : `₹${tier.cost}`);
+  const shipLabel = tier.cost === null ? `₹${COD_CHARGE_MIN}-₹${COD_CHARGE_MAX} extra` : (tier.cost === 0 ? "Free (prepaid)" : `₹${tier.cost}`);
   document.getElementById("sumBase").textContent = `₹${base}`;
   document.getElementById("sumShip").textContent = shipLabel;
-  document.getElementById("sumTotal").textContent = tier.cost === null ? `₹${base} + COD` : `₹${base + tier.cost}`;
-
-  // COD's exact shipping cost depends on weight, so the Grand Total above
-  // reads as a clear "Price + COD" (not a confusing two-number range) -
-  // this note underneath is where the actual ₹350-500 range lives instead.
-  const codNote = document.getElementById("sumCodNote");
-  if(codNote){
-    if(tier.cost === null){
-      codNote.textContent = `COD charge: ₹${COD_CHARGE_MIN}-₹${COD_CHARGE_MAX}`;
-      codNote.style.display = "flex";
-    } else {
-      codNote.style.display = "none";
-    }
-  }
+  document.getElementById("sumTotal").textContent = tier.cost === null ? `₹${base} + COD charge` : `₹${base + tier.cost}`;
 }
 
 function removeFromCart(idx){
@@ -6183,12 +6180,15 @@ function submitOrder(e){
 
   const base = cart.reduce((sum,i)=>sum+i.price*i.qty, 0);
   const tier = SHIPPING_TIERS[selectedShipping];
-  const shipLabel = tier.cost === null ? "Cash on Delivery (COD)" : (tier.cost === 0 ? "Free (4-7 days)" : `Fast Shipping ₹300/- (3-4 days)`);
-  const grandTotal = tier.cost === null ? `₹${base}/- + COD charge` : `₹${base + tier.cost}/-`;
+  const isCod = tier.cost === null;
+  const shipLabel = isCod ? `COD charge ₹${COD_CHARGE_MIN}-₹${COD_CHARGE_MAX}/- extra (varies by weight and location)` : (tier.cost === 0 ? "Free - Prepaid (4-7 days)" : `Fast Shipping ₹300/- (3-4 days)`);
+  const paymentMode = isCod ? "Cash on Delivery (COD)" : "Prepaid";
+  const grandTotal = isCod ? `₹${base}/- + COD charge` : `₹${base + tier.cost}/-`;
 
   const allWatches = cart.every(i => WATCHES.some(w => w.id === i.watchId));
   const noun = allWatches ? "WATCH" : "ITEM";
-  let msg = `*${cart.length} ${noun}${cart.length>1 ? (allWatches ? 'ES' : 'S') : ''} ORDER*\n\n`;
+  const totalQty = cart.reduce((sum, i) => sum + (i.qty || 1), 0);
+  let msg = `*${totalQty} ${noun}${totalQty>1 ? (allWatches ? 'ES' : 'S') : ''} ORDER*\n\n`;
   cart.forEach((item, i) => {
     const cartDiscountPct = item.marketPrice ? Math.round(((item.marketPrice - item.price) / item.marketPrice) * 100) : null;
     const priceLine = cartDiscountPct !== null
@@ -6201,7 +6201,8 @@ function submitOrder(e){
   if(insta) msg += `Instagram: ${insta}\n`;
   msg += `\n`;
   if(remarks) msg += `*REMARKS / NOTES*\n${remarks}\n\n`;
-  msg += `*ORDER SUMMARY*\nBase Price: ₹${base}/-\nShipping: ${shipLabel}\n*GRAND TOTAL: ${grandTotal}*`;
+  msg += `*ORDER SUMMARY*\nBase Price: ₹${base}/-\nShipping: ${shipLabel}\nPayment Mode: ${paymentMode}\n`;
+  msg += `*GRAND TOTAL: ${grandTotal}*`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.open(url, "_blank", "noopener");
