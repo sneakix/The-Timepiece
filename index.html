@@ -6182,7 +6182,6 @@ function submitOrder(e){
   const tier = SHIPPING_TIERS[selectedShipping];
   const isCod = tier.cost === null;
   const shipLabel = isCod ? `COD charge ₹${COD_CHARGE_MIN}-₹${COD_CHARGE_MAX}/- extra (varies by weight and location)` : (tier.cost === 0 ? "Free - Prepaid (4-7 days)" : `Fast Shipping ₹300/- (3-4 days)`);
-  const paymentMode = isCod ? "Cash on Delivery (COD)" : "Prepaid";
   const grandTotal = isCod ? `₹${base}/- + COD charge` : `₹${base + tier.cost}/-`;
 
   const allWatches = cart.every(i => WATCHES.some(w => w.id === i.watchId));
@@ -6201,7 +6200,7 @@ function submitOrder(e){
   if(insta) msg += `Instagram: ${insta}\n`;
   msg += `\n`;
   if(remarks) msg += `*REMARKS / NOTES*\n${remarks}\n\n`;
-  msg += `*ORDER SUMMARY*\nBase Price: ₹${base}/-\nShipping: ${shipLabel}\nPayment Mode: ${paymentMode}\n`;
+  msg += `*ORDER SUMMARY*\nBase Price: ₹${base}/-\nShipping: ${shipLabel}\n`;
   msg += `*GRAND TOTAL: ${grandTotal}*`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
