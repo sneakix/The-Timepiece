@@ -683,6 +683,17 @@
   .breadcrumb-current{ font-weight:800; color:var(--ink); }
   .breadcrumb-sep{ color:var(--muted); font-size:11px; }
 
+  /* ---------- Welcome Page: all-categories banner (between hero and Products) ----------
+     Same look as the hero banner above (it reuses .home-hero-banner, .home-hero-ctas
+     and the gold .home-hero-btn-shop pill) - one landscape image with one pill
+     button per category laid over its bottom edge. */
+  .home-allcat-banner{ margin-top:12px; }
+  .home-allcat-banner img{ object-position:center; }
+  .home-allcat-banner::after{ background:linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0) 62%); }
+  .home-allcat-banner .home-hero-ctas{ right:16px; flex-wrap:wrap; gap:8px; }
+  @media(min-width:640px){ .home-allcat-banner .home-hero-ctas{ right:24px; gap:10px; } }
+  @media(max-width:639px){ .home-allcat-banner .home-hero-btn{ padding:7px 12px; min-height:30px; font-size:10.5px; } }
+
   /* ---------- Welcome Page: Products section ---------- */
   .home-cat-section{ padding:18px 16px 4px; }
   @media(min-width:1280px){ .home-cat-section{ max-width:1200px; margin:0 auto; } }
@@ -730,12 +741,9 @@
   .offer-card.offer-1000{ background:linear-gradient(135deg, #c0281f 0%, #ff6a3d 100%); }
   .offer-card.offer-1500{ background:linear-gradient(135deg, #7a1616 0%, #b8860b 100%); }
   .offer-card.offer-2000{ background:linear-gradient(135deg, #161616 0%, #3a3a3a 100%); }
-  /* Special/seasonal offers card - maroon-to-gold so it reads as
-     "special occasion" against the other 3 (which are plain price
-     tiers). Swap images/seasonal-sale.jpg for the current festival's
-     photo whenever the season changes; the color works year-round so it
-     doesn't need to change too. */
-  .offer-card.offer-seasonal{ background:linear-gradient(135deg, #7a0c2e 0%, #d4a017 100%); }
+  /* Seasonal sale tile - Christmas red-to-green. This gradient only shows
+     if images/christmas-portrait.jpg (3:4) fails to load. */
+  .offer-card.offer-seasonal{ background:linear-gradient(135deg, #8b1a1a 0%, #165b33 100%); }
 
   /* Homepage-only: the seasonal offer gets a wide banner card instead of
      the portrait offer-card style above (that style stays for the Offers
@@ -746,7 +754,7 @@
     display:block; position:relative; width:100%; overflow:hidden;
     border:none; padding:0; cursor:pointer;
     border-radius:var(--radius-lg);
-    background:linear-gradient(135deg, #7a0c2e 0%, #d4a017 100%);
+    background:linear-gradient(135deg, #8b1a1a 0%, #165b33 100%); /* only visible if images/christmas-landscape.jpg fails to load */
     aspect-ratio:21/9;
     margin-bottom:14px;
     box-shadow:var(--shadow-2);
@@ -2022,6 +2030,15 @@
       <button class="home-hero-btn home-hero-btn-shop" onclick="showAllProducts()">Shop</button>
     </div>
   </div>
+  <!-- All-categories banner: ONE landscape image (images/category-banner.jpg,
+       21:9) showing every category we sell, with a gold pill button per
+       category over its bottom edge. Buttons are built by
+       renderHomeAllCatBanner() from HOME_BANNER_ITEMS. If the image is
+       missing it is removed and the buttons sit on the dark background. -->
+  <section class="home-hero-banner home-allcat-banner" id="homeAllCatBanner" aria-label="All product categories" style="display:none">
+    <img src="images/category-banner.jpg" alt="" onerror="this.remove()">
+    <div class="home-hero-ctas" id="homeAllCatCtas"></div>
+  </section>
   <!-- Products: one card per product type, just under the hero.
        Watches is fixed; the accessory cards (Spectacles/Belts/Bags/...)
        are generated from the Category values actually in the Accessories
@@ -2063,13 +2080,13 @@
   <!-- Offer Watches: seasonal sale banner (landscape image, only while some
        product has Seasonal Sale = TRUE) + one image card per price budget
        (only budgets that have at least one cheaper watch). Images:
-       images/seasonal-sale.jpg (landscape), images/offer-500.jpg,
+       images/christmas-landscape.jpg (landscape, 21:9), images/offer-500.jpg,
        offer-1000.jpg, offer-1500.jpg (portrait). -->
   <section class="home-cat-section" id="homeBudgetSection" style="display:none">
     <h2 class="home-cat-heading">Offer Watches</h2>
-    <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')" aria-label="Special Offers">
-      <img class="offer-seasonal-banner-img" src="images/seasonal-sale.jpg" alt="" onerror="this.remove()">
-      <span class="offer-seasonal-banner-label" id="seasonalBannerLabel">Special Offers</span>
+    <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')">
+      <img class="offer-seasonal-banner-img" src="images/christmas-landscape.jpg" alt="" onerror="this.remove()">
+      <span class="offer-seasonal-banner-label" id="seasonalBannerLabel"></span>
     </button>
     <div class="home-cat-strip" id="homeBudgetRow"></div>
   </section>
@@ -2512,6 +2529,14 @@
                         through, and the discount % badge is calculated
                         automatically as ((marketPrice-price)/marketPrice)*100,
                         rounded. Leave blank for no discount.
+   Seasonal Sale    -> true/false. TRUE puts the product in the seasonal sale
+                        section (also accepts Seasonal_Sale / seasonal_sale).
+   Seasonal Price   -> optional (also Seasonal_Price / seasonal_price). Becomes
+                        the customer Price only while Seasonal Sale = TRUE and
+                        it is a number > 0 AND lower than Price (₹ and commas
+                        are ignored). The normal Price then shows struck through
+                        (or Market Price, if Sale = TRUE and it is higher).
+                        Blank/0/invalid/not lower = normal Price, silently.
    COD Available    -> true/false, shows "Cash on Delivery Available" on
                         the item page - only selected products support COD
    New Arrival      -> true/false. The NEW tag, the "New Arrivals" filter and the
@@ -2636,7 +2661,7 @@ let hasAccessories = false;
 // (any case) is matched to "Belts" and displayed as "Belts". Any OTHER
 // Category value found in the sheet still gets its own entry, shown
 // exactly as typed, after these. Add a name here to make it permanent.
-const ACCESSORY_DEFAULT_CATEGORIES = ["Spectacles", "Bags", "Belts"];
+const ACCESSORY_DEFAULT_CATEGORIES = ["Spectacles", "Bags", "Belts", "Caps"];
 function accessoryCatKey(c){
   return String(c || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/s$/, "");
 }
@@ -2803,7 +2828,34 @@ function rowsToWatches(rows){
     // merge - it used to sit in the Category column - so every existing
     // watch keeps its ID (carts, wishlists and shared links stay valid).
     const idBasis = explicitId || `${brand}|${name}|${isWatchRow ? category : catCell}|${images[0] || ""}`;
-    const price = parseInt(r["Price"], 10) || 0;
+    const normalPrice = parseInt(r["Price"], 10) || 0;
+    // Seasonal price: active ONLY while Seasonal Sale = TRUE AND Seasonal Price
+    // is a valid number > 0 AND lower than the normal Price. Anything else
+    // (flag off, blank/0/invalid, not lower) silently uses the normal Price.
+    // `price` below is the CUSTOMER price - decided once, here, so cards,
+    // product page, sorting, price filter, offer tiers, cart and the WhatsApp
+    // message all read it without any per-place patching.
+    const seasonalFlag = toBool(getRowValue(r, "Seasonal Sale", "Seasonal_Sale", "seasonal_sale"));
+    const seasonalRaw = String(getRowValue(r, "Seasonal Price", "Seasonal_Price", "seasonal_price") ?? "").replace(/[\u20B9,\s]/g, "");
+    const seasonalNum = /^\d+(\.\d+)?$/.test(seasonalRaw) ? Math.round(parseFloat(seasonalRaw)) : 0;
+    const seasonalPriceActive = seasonalFlag && seasonalNum > 0 && seasonalNum < normalPrice;
+    const price = seasonalPriceActive ? seasonalNum : normalPrice;
+    // Struck-through reference price. Seasonal active: the normal Price - or
+    // the Market Price when Sale = TRUE and it is higher than the normal
+    // Price. Otherwise: the Market Price, only while Sale = TRUE. Kept only
+    // when it makes a real discount (reference > customer price), else null
+    // (also stops the cart from showing a fake strikethrough).
+    const saleFlag = toBool(r["Sale"]);
+    const sheetMarketPrice = (() => {
+      const raw = r["Market Price"];
+      if(!raw || !raw.trim()) return null;
+      const n = parseInt(raw, 10);
+      return isNaN(n) ? null : n;
+    })();
+    let referencePrice = seasonalPriceActive
+      ? ((saleFlag && sheetMarketPrice !== null && sheetMarketPrice > normalPrice) ? sheetMarketPrice : normalPrice)
+      : (saleFlag ? sheetMarketPrice : null);
+    if(referencePrice === null || referencePrice <= price) referencePrice = null;
     // Case Size is a watch-only spec - ignored for every other category,
     // even if someone fills the cell in.
     const caseSize = isWatchRow ? (r["Case Size (mm)"] || "").trim() : "";
@@ -2824,15 +2876,11 @@ function rowsToWatches(rows){
       gender,
       price,
       caseSize,
-      // "Market Price" is an optional, higher reference price used only to
-      // show a strikethrough + compute a discount %. "Price" is ALWAYS the
-      // actual selling price shown prominently - it is never struck through.
-      marketPrice: (() => {
-        const raw = r["Market Price"];
-        if(!raw || !raw.trim()) return null;
-        const n = parseInt(raw, 10);
-        return isNaN(n) ? null : n;
-      })(),
+      // Reference price shown struck through + used for the discount %.
+      // Already validated above: null unless it is higher than `price`.
+      // `price` is ALWAYS the actual selling price - never struck through.
+      marketPrice: referencePrice,
+      seasonalPriceActive,
       codAvailable: toBool(r["COD Available"]),
       isNew: isActiveNewArrival(toBool(r["New Arrival"]), rawNewDate),
       isSale: toBool(r["Sale"]),
@@ -2842,7 +2890,7 @@ function rowsToWatches(rows){
       // product is currently flagged (see hasSeasonalOffer), so turning a
       // season "off" is just clearing this column back to FALSE/blank for
       // every row - no code change needed.
-      isSeasonal: toBool(getRowValue(r, "Seasonal Sale", "Seasonal_Sale", "seasonal_sale")),
+      isSeasonal: seasonalFlag,
       // "1" and "2" both list the product; "0", blank, or anything else
       // keeps it out of the catalog entirely. "2" additionally gets sort
       // priority in the default view (see listedPriority + the "latest"
@@ -2933,6 +2981,7 @@ function applyCatalogRows(rawRows, isLiveFetch){
   updateGenderHeroVisibility();
   updateSeasonalCardVisibility();
   renderBudgetCards();
+  renderHomeAllCatBanner();
   document.getElementById("grid").setAttribute("aria-busy", "false");
 
   if(itemDetailWatchId !== null){
@@ -2981,6 +3030,9 @@ function reconcileCartWithCatalog(){
   cart = cart.filter(item => {
     const watch = allProducts().find(s => s.id === item.watchId);
     if(!watch){ changed = true; itemsRemoved = true; return false; } // discontinued - drop the line
+    // watch.price = customer price (seasonal when active) and watch.marketPrice =
+    // reference price (null unless a real discount), so a cart line reprices
+    // by itself - and loses its strikethrough - when the sale ends.
     if(watch.price !== item.price || watch.marketPrice !== item.marketPrice || watch.images[0] !== item.image || watch.name !== item.name || watch.brand !== item.brand){
       if(watch.price !== item.price) priceChanged = true;
       item.price = watch.price;
@@ -3541,7 +3593,7 @@ function buildDescriptionLines(rawDescription){
 // % field anywhere - it's always derived here from this single function,
 // so every place that shows a price stays in sync automatically.
 function watchDiscountPercent(watch){
-  if(!watch.isSale) return null;
+  if(!watch.isSale && !watch.seasonalPriceActive) return null;
   if(watch.marketPrice === null || watch.marketPrice === undefined) return null;
   if(watch.marketPrice <= watch.price) return null;
   return Math.round(((watch.marketPrice - watch.price) / watch.marketPrice) * 100);
@@ -3999,10 +4051,12 @@ function updatePageChrome(){
   renderBreadcrumb();
 }
 
-// Label for the seasonal sale (card text, page heading, breadcrumb). Change
-// this one line when the season changes, and swap images/seasonal-sale.jpg
-// (landscape, homepage) and images/seasonal-sale-portrait.jpg (Offers page).
-const SEASONAL_SALE_LABEL = "Special Offers";
+// Name of the seasonal sale. To rename it, edit these two constants (plain
+// text for heading/breadcrumb/aria-label; HTML with a <br> for the banner and
+// tile labels) and swap images/christmas-landscape.jpg (21:9, homepage banner)
+// and images/christmas-portrait.jpg (3:4, Offers page tile) - two separate files.
+const SEASONAL_SALE_LABEL = "Christmas & New Year Sale";
+const SEASONAL_SALE_LABEL_HTML = "Christmas &amp; New Year<br>Sale";
 
 // Price budgets offered on the homepage and the Offers page. A budget is
 // only offered while at least one watch is actually cheaper than it, so it
@@ -4027,7 +4081,7 @@ function renderOffersTierStrip(el, isOffersTier){
   }
   const cards = [];
   if(hasSeasonalOffer || activeFilter === "seasonal"){
-    cards.push(`<button class="offer-card offer-card-compact offer-seasonal ${activeFilter==="seasonal"?'active':''}" onclick="selectPriceTierHero('seasonal')" aria-pressed="${activeFilter==="seasonal"}">${offerImgTag("seasonal-sale-portrait.jpg")}<span class="offer-card-label">${escapeHtml(SEASONAL_SALE_LABEL)}</span></button>`);
+    cards.push(`<button class="offer-card offer-card-compact offer-seasonal ${activeFilter==="seasonal"?'active':''}" onclick="selectPriceTierHero('seasonal')" aria-pressed="${activeFilter==="seasonal"}">${offerImgTag("christmas-portrait.jpg")}<span class="offer-card-label">${SEASONAL_SALE_LABEL_HTML}</span></button>`);
   }
   const inStock = budgetTiersInStock();
   BUDGET_TIERS.filter(n => inStock.includes(n) || activeFilter === "under"+n).forEach(n => {
@@ -4038,13 +4092,58 @@ function renderOffersTierStrip(el, isOffersTier){
   el.innerHTML = cards.join("");
 }
 
+// All-categories banner (Welcome Page, between hero and Products). Each button
+// opens its product category; `sub` (optional) then pre-selects that Type
+// inside it, if the sheet has a matching sub-category - otherwise the whole
+// category opens. Categories not in the sheet yet (Jackets, Wallets) are
+// hidden until they have rows, same as the nav; Watches/Spectacles/Bags/Belts/
+// Caps are permanent (ACCESSORY_DEFAULT_CATEGORIES).
+const HOME_BANNER_ITEMS = [
+  { label:"Watches",    cat:"Watches" },
+  { label:"Spectacles", cat:"Spectacles" },
+  { label:"Sunglasses", cat:"Spectacles", sub:"Sunglasses" },
+  { label:"Backpacks",  cat:"Bags", sub:"Backpack" },
+  { label:"Ladies Bag", cat:"Bags", sub:"Ladies Bag" },
+  { label:"Jackets",    cat:"Jackets" },
+  { label:"Wallets",    cat:"Wallets" },
+  { label:"Belts",      cat:"Belts" },
+  { label:"Caps",       cat:"Caps" }
+];
+function homeBannerRealCategory(it){
+  return accessoryCategoriesPresent().find(c => accessoryCatKey(c) === accessoryCatKey(it.cat)) || null;
+}
+function renderHomeAllCatBanner(){
+  const box = document.getElementById("homeAllCatBanner");
+  const ctas = document.getElementById("homeAllCatCtas");
+  if(!box || !ctas) return;
+  ctas.innerHTML = HOME_BANNER_ITEMS.map((it, i) =>
+    (it.cat === "Watches" || homeBannerRealCategory(it))
+      ? `<button class="home-hero-btn home-hero-btn-shop" onclick="openHomeBannerItem(${i})">${escapeHtml(it.label)}</button>` : ""
+  ).join("");
+  box.style.display = ctas.innerHTML ? "" : "none";
+}
+function openHomeBannerItem(i){
+  const it = HOME_BANNER_ITEMS[i];
+  if(!it) return;
+  if(it.cat === "Watches"){ showAllProducts(); return; }
+  const real = homeBannerRealCategory(it);
+  if(!real) return;
+  openAccessoryCategory(real);
+  if(it.sub){
+    const hit = ACCESSORIES.find(a => a.productCategory === real && accessoryCatKey(a.category) === accessoryCatKey(it.sub));
+    if(hit) setCategory(hit.category);
+  }
+}
+
 function renderBudgetCards(){
   const sec = document.getElementById("homeBudgetSection");
   const row = document.getElementById("homeBudgetRow");
   if(!sec || !row) return;
   const tiers = budgetTiersInStock();
   const lbl = document.getElementById("seasonalBannerLabel");
-  if(lbl) lbl.textContent = SEASONAL_SALE_LABEL;
+  if(lbl) lbl.innerHTML = SEASONAL_SALE_LABEL_HTML;
+  const seasonalCard = document.getElementById("seasonalOfferCard");
+  if(seasonalCard) seasonalCard.setAttribute("aria-label", SEASONAL_SALE_LABEL);
   sec.style.display = (tiers.length || hasSeasonalOffer) ? "" : "none";
   row.style.display = tiers.length ? "" : "none";
   row.innerHTML = tiers.map(n => `
@@ -4658,7 +4757,7 @@ function openAccessoryCategory(cat){
 // order everywhere at once. Jackets is NOT a permanent category (it only
 // appears once the sheet has Jacket rows) - it just sorts before Belts when
 // present. Categories not listed here go after these, in sheet order.
-const ACCESSORY_CATEGORY_ORDER = ["Spectacles", "Bags", "Jackets", "Wallets", "Belts" ];
+const ACCESSORY_CATEGORY_ORDER = ["Spectacles", "Bags", "Jackets", "Wallets", "Belts", "Caps" ];
 function accessoryCategoriesPresent(){
   const list = [...ACCESSORY_DEFAULT_CATEGORIES];
   ACCESSORIES.forEach(a => {
