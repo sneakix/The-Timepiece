@@ -804,6 +804,8 @@
     background:linear-gradient(135deg, #161616 0%, #b8860b 100%); /* only visible if images/offer-spectacles-banner.jpg fails to load */
   }
   .spec-offer-banner:hover{ transform:none; box-shadow:var(--shadow-2); }
+  .spec-bundle-strip{ gap:8px; overflow-x:auto; scrollbar-width:none; padding:10px 16px 0; }
+  .spec-bundle-strip::-webkit-scrollbar{ display:none; }
   .spec-offer-sub{
     display:block; margin-top:8px; font-family:inherit; font-style:normal; font-weight:700;
     font-size:12.5px; line-height:1.4; letter-spacing:0.02em; color:var(--gold-soft);
@@ -2154,7 +2156,7 @@
 <h1 class="page-heading" id="pageHeading" style="display:none"></h1>
 <!-- Spectacles offer banner: only on the Spectacles page while some spectacles
      have Spec Offer = TRUE. Image: images/offer-spectacles-banner.jpg (21:9);
-     the text is set from SPEC_OFFER_BANNER_HTML. -->
+     the text is set by specOfferBannerHtml(). -->
 <section class="offer-seasonal-banner spec-offer-banner" id="specOfferBanner" style="display:none" aria-label="Spectacles offer">
   <img class="offer-seasonal-banner-img" src="images/offer-spectacles-banner.jpg" alt="" onerror="this.remove()">
   <span class="offer-seasonal-banner-label" id="specOfferBannerLabel"></span>
@@ -2178,6 +2180,7 @@
   </button>
 </div>
 <div class="offers-tier-strip" id="offersTierStrip" style="display:none"></div>
+<div class="spec-bundle-strip" id="specBundleStrip" style="display:none"></div>
 <h2 class="cat-strip-heading" id="catStripHeading" style="display:none">Shop by Type</h2>
 <div class="cat-strip" id="catStrip" role="group" aria-label="Watch types"></div>
 
@@ -2501,6 +2504,7 @@
       <div id="cartTotals" style="display:none;">
         <div class="cart-subline"><span>Base Price</span><span id="sumBase"></span></div>
         <div class="cart-subline" id="sumSpecRow" style="display:none"><span id="sumSpecLabel">Offer</span><span id="sumSpec"></span></div>
+        <div id="sumSpecHint" style="display:none; font-size:12px; line-height:1.4; color:var(--muted); padding:0 0 6px;"></div>
         <div class="cart-subline"><span>Shipping</span><span id="sumShip"></span></div>
         <div class="cart-total"><span>Grand Total</span><span id="sumTotal"></span></div>
       </div>
@@ -2578,10 +2582,12 @@
                         are ignored). The normal Price then shows struck through
                         (or Market Price, if Sale = TRUE and it is higher).
                         Blank/0/invalid/not lower = normal Price, silently.
-   Spec Offer       -> true/false (also Spec_Offer / spec_offer), Spectacles rows
-                        only. TRUE = part of the Buy One Get One Free offer: any
-                        2 such spectacles in the cart (same or different, any
-                        prices) - the cheaper one is free. Only these products
+   Spec Offer       -> a bundle NUMBER: 1, 2, 3 ... (also Spec_Offer / spec_offer),
+                        Spectacles rows only. Rows with the SAME number are one
+                        bundle (bundles never mix). Buy One Get One Free: for
+                        every 2 spectacles of the same bundle in the cart, the
+                        cheaper one is free. Prices are just the normal Price
+                        column. 0 / blank / text = no offer. Only these products
                         change the cart total; other rows are untouched.
    COD Available    -> true/false, shows "Cash on Delivery Available" on
                         the item page - only selected products support COD
@@ -2707,13 +2713,17 @@ let hasAccessories = false;
 // (any case) is matched to "Belts" and displayed as "Belts". Any OTHER
 // Category value found in the sheet still gets its own entry, shown
 // exactly as typed, after these. Add a name here to make it permanent.
-const ACCESSORY_DEFAULT_CATEGORIES = ["Spectacles", "Bags", "Belts", "Caps"];
+const ACCESSORY_DEFAULT_CATEGORIES = ["Spectacles", "Bags", "Belts"];
+// Known categories that are NOT permanent: they get a nav/menu/homepage/banner
+// entry only while the sheet has at least one row with that Category ("cap",
+// "Caps", "CAP" -> shown as "Caps"; "chain", "Chains" -> shown as "Chains").
+const ACCESSORY_OPTIONAL_CATEGORIES = ["Caps", "Chains"];
 function accessoryCatKey(c){
   return String(c || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/s$/, "");
 }
 function canonicalAccessoryCategory(c){
   const k = accessoryCatKey(c);
-  return ACCESSORY_DEFAULT_CATEGORIES.find(d => accessoryCatKey(d) === k) || c;
+  return ACCESSORY_DEFAULT_CATEGORIES.concat(ACCESSORY_OPTIONAL_CATEGORIES).find(d => accessoryCatKey(d) === k) || c;
 }
 
 // Which catalog is currently being browsed - toggled by
@@ -2937,9 +2947,10 @@ function rowsToWatches(rows){
       // season "off" is just clearing this column back to FALSE/blank for
       // every row - no code change needed.
       isSeasonal: seasonalFlag,
-      // "Spec Offer" = TRUE puts a SPECTACLES product in the bundle offer
-      // (Buy One Get One Free - see specOfferDiscount). Ignored on any other category.
-      specOffer: toBool(getRowValue(r, "Spec Offer", "Spec_Offer", "spec_offer")) && accessoryCatKey(productCategory) === accessoryCatKey("Spectacles"),
+      // "Spec Offer" = a bundle NUMBER (1, 2, 3 ...) for SPECTACLES rows: rows with the
+      // same number are one Buy One Get One Free bundle; 0 / blank / anything else =
+      // no offer. The price is the normal Price column.
+      specOffer: accessoryCatKey(productCategory) === accessoryCatKey("Spectacles") ? specNum(getRowValue(r, "Spec Offer", "Spec_Offer", "spec_offer")) : 0,
       // "1" and "2" both list the product; "0", blank, or anything else
       // keeps it out of the catalog entirely. "2" additionally gets sort
       // priority in the default view (see listedPriority + the "latest"
@@ -3083,9 +3094,9 @@ function reconcileCartWithCatalog(){
     // watch.price = customer price (seasonal when active) and watch.marketPrice =
     // reference price (null unless a real discount), so a cart line reprices
     // by itself - and loses its strikethrough - when the sale ends.
-    if(watch.price !== item.price || watch.marketPrice !== item.marketPrice || !!watch.specOffer !== !!item.specOffer || watch.images[0] !== item.image || watch.name !== item.name || watch.brand !== item.brand){
-      if(watch.price !== item.price || !!watch.specOffer !== !!item.specOffer) priceChanged = true;
-      item.specOffer = !!watch.specOffer; // offer switched on/off in the sheet -> cart total follows
+    if(watch.price !== item.price || watch.marketPrice !== item.marketPrice || specNum(watch.specOffer) !== specNum(item.specOffer) || watch.images[0] !== item.image || watch.name !== item.name || watch.brand !== item.brand){
+      if(watch.price !== item.price || specNum(watch.specOffer) !== specNum(item.specOffer)) priceChanged = true;
+      item.specOffer = specNum(watch.specOffer); // bundle changed/removed in the sheet -> cart total follows
       item.price = watch.price;
       item.marketPrice = watch.marketPrice;
       item.image = watch.images[0];
@@ -3665,6 +3676,29 @@ const SEARCH_ALIASES = {
 // every single character typed was wasted work, since the catalog itself
 // only changes when applyCatalogRows() runs. Built once there (see
 // cachedSuggestionPool = ... in applyCatalogRows) and simply reused here.
+// Spelling-tolerant matching for every search box: case, spaces, hyphens and
+// punctuation are ignored, so "G Shock", "g-shock", "GShock" and "G  SHOCK" all
+// find the same watches (letters/digits of any script are kept).
+function searchNorm(t){ return String(t == null ? "" : t).toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu, ""); }
+// `term` is already lower-case. Falls back to a plain match when the term is
+// only punctuation (e.g. "-"), so that still behaves as before.
+function searchTextMatches(text, term){
+  const nt = searchNorm(term);
+  if(!nt) return String(text).toLowerCase().includes(term);
+  const nh = searchNorm(text);
+  if(nh.includes(nt)) return true; // "g shock" / "g-shock" / "gshock" in one stretch of text
+  // Otherwise every word must appear somewhere, so "casio g shock" still finds a
+  // watch whose brand (Casio) and name (G Shock ...) are separate fields. A lone
+  // letter is glued to the next word first ("g shock" -> "gshock").
+  const parts = term.split(/[^\p{L}\p{M}\p{N}]+/u).filter(Boolean), words = [];
+  for(let i = 0; i < parts.length; i++){
+    let w = parts[i];
+    if(w.length === 1 && i + 1 < parts.length) w += parts[++i];
+    words.push(w);
+  }
+  return words.length > 1 && words.every(w => nh.includes(w));
+}
+
 let cachedSuggestionPool = [];
 function buildSearchSuggestionPool(){
   const brands = new Set();
@@ -3692,13 +3726,13 @@ function getSearchSuggestions(query){
     const targetLower = aliasTarget.toLowerCase();
     pool.forEach(term => {
       if(results.length >= 6) return;
-      if(term.toLowerCase().includes(targetLower)) addTerm(term);
+      if(searchTextMatches(term, targetLower)) addTerm(term);
     });
   }
 
   pool.forEach(term => {
     if(results.length >= 6) return;
-    if(term.toLowerCase().includes(q)) addTerm(term);
+    if(searchTextMatches(term, q)) addTerm(term);
   });
 
   return results.slice(0, 6);
@@ -3840,6 +3874,7 @@ function selectPriceTierHero(key){
   // "specoffer" = Offers-section page listing only the offer-eligible spectacles.
   activeSection = key === "specoffer" ? "accessories" : "watches";
   if(key === "specoffer") activeAccessoryCat = homeBannerRealCategory({ cat:"Spectacles" }) || "Spectacles";
+  activeSpecBundle = 0;
   activeFilter = key;
   activeGender = null; activeCategory = "All";
   activeBrands.clear(); activeAvailFilters.clear(); filterNewOnly = false; filterSaleOnly = false;
@@ -3958,7 +3993,7 @@ function categoryScopeWatches(){
     if(activeFilter === "under2000" && s.price >= 2000) return false;
     if(activeFilter === "premium3000" && s.price < 2750) return false;
     if(activeFilter === "seasonal" && !s.isSeasonal) return false;
-    if(activeFilter === "specoffer" && !s.specOffer) return false;
+    if(activeFilter === "specoffer" && (!specBundleOf(s) || (activeSpecBundle && specBundleOf(s) !== activeSpecBundle))) return false;
     return true;
   });
 }
@@ -4077,6 +4112,7 @@ function updatePageChrome(){
   const tiles = document.getElementById("apGenderTiles");
   const offersTierStrip = document.getElementById("offersTierStrip");
   const specBanner = document.getElementById("specOfferBanner");
+  renderSpecBundleStrip(document.getElementById("specBundleStrip"));
   if(onWelcomePage){
     if(specBanner) specBanner.style.display = "none";
     if(heading) heading.style.display = "none";
@@ -4107,7 +4143,7 @@ function updatePageChrome(){
   if(specBanner){
     const showSpec = activeSection === "accessories" && accessoryCatKey(activeAccessoryCat) === accessoryCatKey("Spectacles") && activeFilter !== "specoffer" && hasSpecOffer();
     specBanner.style.display = showSpec ? "" : "none";
-    if(showSpec) document.getElementById("specOfferBannerLabel").innerHTML = SPEC_OFFER_BANNER_HTML;
+    if(showSpec) document.getElementById("specOfferBannerLabel").innerHTML = specOfferBannerHtml();
   }
   renderOffersTierStrip(offersTierStrip, isOffersTier);
   renderBreadcrumb();
@@ -4120,27 +4156,69 @@ function updatePageChrome(){
 const SEASONAL_SALE_LABEL = "Christmas & New Year Sale";
 const SEASONAL_SALE_LABEL_HTML = "Christmas &amp; New Year<br>Sale";
 
-// Spectacles offer - BUY ONE GET ONE FREE. Spectacles with "Spec Offer = TRUE"
-// in the sheet are paired up IN THE CART: for every 2 units the cheaper one is
-// free (3 units = 1 free, 4 units = 2 free ...). The pair can mix different
-// offered spectacles, so different prices never matter. Only flagged units
-// count; every other product, and spectacles that are not flagged, are priced
-// exactly as before.
+// Spectacles BUY ONE GET ONE FREE, in bundles. In the sheet, "Spec Offer" holds a
+// bundle number (1, 2, 3 ...); rows with the same number are one bundle and
+// bundles never mix. In the cart, for every 2 units from the SAME bundle the
+// cheaper one is free (3 units = 1 free, 4 = 2 free ...). Prices are simply the
+// normal Price column - nothing is priced anywhere else. Every other product,
+// and spectacles without a bundle number, are priced exactly as before.
 const SPEC_OFFER_NAME = "Buy One Get One Free";
-const SPEC_OFFER_TEXT = "Buy 1 Get 1 Free";
-const SPEC_OFFER_TILE_HTML = `Spectacles<br>Buy One<br>Get One Free`;
-const SPEC_OFFER_BANNER_HTML = `${SPEC_OFFER_NAME}<span class="spec-offer-sub">On selected spectacles<br>Buy any 2 - the cheaper one is free</span>`;
-function hasSpecOffer(){ return ACCESSORIES.some(a => a.specOffer); }
+let activeSpecBundle = 0; // Offers-page bundle pill: 0 = all bundles
+// Whole numbers only: "1" -> 1; "", "0", "TRUE", "1.5", true -> 0.
+function specNum(v){ const t = String(v == null ? "" : v).trim(); return /^\d+$/.test(t) ? parseInt(t, 10) : 0; }
+// The bundle number a product/cart line belongs to, or 0 (no offer).
+function specBundleOf(p){ return specNum(p && p.specOffer); }
+function hasSpecOffer(){ return ACCESSORIES.some(a => specBundleOf(a) > 0); }
+function specBundleLabel(p){ const b = specBundleOf(p); return b ? `BUY 1 GET 1 · BUNDLE ${b}` : ""; }
+function specOfferTileHtml(){ return `Spectacles<br>Buy One<br>Get One Free`; }
+function specOfferBannerHtml(){ return `${SPEC_OFFER_NAME}<span class="spec-offer-sub">On selected spectacles<br>Buy any 2 from the same bundle -<br>the cheaper one is free</span>`; }
+function specBundleNumbers(){ return [...new Set(ACCESSORIES.map(specBundleOf).filter(n => n > 0))].sort((x, y) => x - y); }
+function specBundlePriceText(n){
+  const ps = ACCESSORIES.filter(a => specBundleOf(a) === n).map(a => a.price);
+  const lo = Math.min(...ps), hi = Math.max(...ps);
+  return lo === hi ? `₹${lo}` : `₹${lo}–₹${hi}`;
+}
+// Bundle pills on the Offers-page "specoffer" view (only when there are 2+ bundles):
+// All bundles / Bundle 1 · ₹699 / ... - filters the grid to one bundle.
+function renderSpecBundleStrip(el){
+  if(!el) return;
+  const ids = specBundleNumbers();
+  if(onWelcomePage || activeFilter !== "specoffer" || ids.length < 2){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = `<button class="pill ${activeSpecBundle === 0 ? 'active' : ''}" onclick="setSpecBundle(0)">All bundles</button>` +
+    ids.map(n => `<button class="pill ${activeSpecBundle === n ? 'active' : ''}" onclick="setSpecBundle(${n})">Bundle ${n} · ${specBundlePriceText(n)}</button>`).join("");
+}
+function setSpecBundle(n){ activeSpecBundle = n; currentPage = 1; renderGrid(); updatePageChrome(); }
 // Opens the Offers section showing only the offer-eligible spectacles.
 function openSpecOffer(){ selectPriceTierHero("specoffer"); }
-// How much the offer takes off the cart right now: the price of the cheapest
-// floor(n/2) flagged units in the cart (0 until there are 2 flagged units).
-function cartBase(){ return cart.reduce((sum,i)=>sum+i.price*i.qty, 0) - specOfferDiscount(); }
+// Units of each bundle in the cart: { bundleNumber: [unit prices] }.
+function specBundleUnits(){
+  const by = {};
+  cart.forEach(i => {
+    const b = specBundleOf(i);
+    if(!b) return;
+    (by[b] = by[b] || []);
+    for(let k = 0; k < (i.qty || 1); k++) by[b].push(i.price);
+  });
+  return by;
+}
+// How much the offer takes off the cart right now: per bundle, the price of its
+// cheapest floor(n/2) units (0 until a bundle has 2 units). Never mixes bundles.
 function specOfferDiscount(){
-  const unitPrices = [];
-  cart.forEach(i => { if(i.specOffer) for(let k = 0; k < (i.qty || 1); k++) unitPrices.push(i.price); });
-  unitPrices.sort((a, b) => a - b); // cheapest first
-  return unitPrices.slice(0, Math.floor(unitPrices.length / 2)).reduce((a, b) => a + b, 0);
+  const by = specBundleUnits();
+  let total = 0;
+  Object.keys(by).forEach(b => {
+    const u = by[b].slice().sort((x, y) => x - y); // cheapest first
+    total += u.slice(0, Math.floor(u.length / 2)).reduce((a, c) => a + c, 0);
+  });
+  return total;
+}
+function cartBase(){ return cart.reduce((sum,i)=>sum+i.price*i.qty, 0) - specOfferDiscount(); }
+// One hint per bundle that has an odd number of units.
+function specOfferHints(){
+  const by = specBundleUnits();
+  return Object.keys(by).filter(b => by[b].length % 2 === 1)
+    .map(b => `Bundle ${b}: add 1 more from the same bundle to get one free`);
 }
 
 // Price budgets offered on the homepage and the Offers page. A budget is
@@ -4167,7 +4245,7 @@ function renderOffersTierStrip(el, isOffersTier){
   const cards = [];
   if(hasSpecOffer() || activeFilter === "specoffer"){
     const on = activeFilter === "specoffer";
-    cards.push(`<button class="offer-card offer-card-compact offer-specs ${on?'active':''}" onclick="selectPriceTierHero('specoffer')" aria-pressed="${on}">${offerImgTag("offer-spectacles.jpg")}<span class="offer-card-label">${SPEC_OFFER_TILE_HTML}</span></button>`);
+    cards.push(`<button class="offer-card offer-card-compact offer-specs ${on?'active':''}" onclick="selectPriceTierHero('specoffer')" aria-pressed="${on}">${offerImgTag("offer-spectacles.jpg")}<span class="offer-card-label">${specOfferTileHtml()}</span></button>`);
   }
   if(hasSeasonalOffer || activeFilter === "seasonal"){
     cards.push(`<button class="offer-card offer-card-compact offer-seasonal ${activeFilter==="seasonal"?'active':''}" onclick="selectPriceTierHero('seasonal')" aria-pressed="${activeFilter==="seasonal"}">${offerImgTag("christmas-portrait.jpg")}<span class="offer-card-label">${SEASONAL_SALE_LABEL_HTML}</span></button>`);
@@ -4182,9 +4260,9 @@ function renderOffersTierStrip(el, isOffersTier){
 }
 
 // All-categories banner (Welcome Page, just above "Offer Watches"). One button
-// per MAIN category; each opens that category's page. Jackets/Wallets are
-// hidden until the sheet has rows for them (same as the nav); Watches,
-// Spectacles, Bags, Belts and Caps are permanent (ACCESSORY_DEFAULT_CATEGORIES).
+// per MAIN category; each opens that category's page. Jackets, Wallets, Caps
+// and Chains are hidden until the sheet has rows for them (same as the nav);
+// Watches, Spectacles, Bags and Belts are permanent (ACCESSORY_DEFAULT_CATEGORIES).
 const HOME_BANNER_ITEMS = [
   { label:"Watches",    cat:"Watches" },
   { label:"Spectacles", cat:"Spectacles" },
@@ -4192,7 +4270,8 @@ const HOME_BANNER_ITEMS = [
   { label:"Belts",      cat:"Belts" },
   { label:"Wallets",    cat:"Wallets" },
   { label:"Jackets",    cat:"Jackets" },
-  { label:"Caps",       cat:"Caps" }
+  { label:"Caps",       cat:"Caps" },
+  { label:"Chains",     cat:"Chains" }
 ];
 function homeBannerRealCategory(it){
   return accessoryCategoriesPresent().find(c => accessoryCatKey(c) === accessoryCatKey(it.cat)) || null;
@@ -4226,9 +4305,9 @@ function renderBudgetCards(){
   if(seasonalCard) seasonalCard.setAttribute("aria-label", SEASONAL_SALE_LABEL);
   // First tile: the Spectacles offer (only while some spectacles have Spec Offer = TRUE).
   const specTile = hasSpecOffer() ? `
-    <button class="offer-card offer-specs" onclick="openSpecOffer()" aria-label="${escapeHtml(SPEC_OFFER_NAME)}: ${escapeHtml(SPEC_OFFER_TEXT)}">
+    <button class="offer-card offer-specs" onclick="openSpecOffer()" aria-label="${escapeHtml(SPEC_OFFER_NAME)} on selected spectacles">
       ${offerImgTag("offer-spectacles.jpg")}
-      <span class="offer-card-label">${SPEC_OFFER_TILE_HTML}</span>
+      <span class="offer-card-label">${specOfferTileHtml()}</span>
     </button>` : "";
   sec.style.display = (tiers.length || hasSeasonalOffer || specTile) ? "" : "none";
   row.style.display = (tiers.length || specTile) ? "" : "none";
@@ -4555,7 +4634,7 @@ function filterOptionSearchInput(){
   if(row){
     row.querySelectorAll(".filter-chip").forEach(chip => {
       const text = chip.textContent.trim().toLowerCase();
-      chip.style.display = (!q || text.includes(q)) ? "" : "none";
+      chip.style.display = (!q || searchTextMatches(text, q)) ? "" : "none";
     });
   }
 
@@ -4848,7 +4927,7 @@ function openAccessoryCategory(cat){
 // order everywhere at once. Jackets is NOT a permanent category (it only
 // appears once the sheet has Jacket rows) - it just sorts before Belts when
 // present. Categories not listed here go after these, in sheet order.
-const ACCESSORY_CATEGORY_ORDER = ["Spectacles", "Bags", "Jackets", "Wallets", "Belts", "Caps" ];
+const ACCESSORY_CATEGORY_ORDER = ["Spectacles", "Bags", "Jackets", "Wallets", "Belts", "Caps", "Chains" ];
 function accessoryCategoriesPresent(){
   const list = [...ACCESSORY_DEFAULT_CATEGORIES];
   ACCESSORIES.forEach(a => {
@@ -5057,7 +5136,7 @@ function getFilteredWatches(){
     if(searchTerm){
       const availKeywords = watch.codAvailable ? 'cod cash on delivery cash on delivery available' : '';
       const haystack = `${watch.name} ${watch.brand} ${watch.productCategory} ${watch.category} ${watch.description} ${availKeywords}`.toLowerCase();
-      if(!haystack.includes(searchTerm)) return false;
+      if(!searchTextMatches(haystack, searchTerm)) return false;
     }
     if(activeGender && !watchMatchesGender(watch, activeGender)) return false;
     if(activeCategory !== "All" && !segmentMatches(watch, activeCategory)) return false;
@@ -5069,7 +5148,7 @@ function getFilteredWatches(){
     if(activeFilter === "under2000" && watch.price >= 2000) return false;
     if(activeFilter === "premium3000" && watch.price < 2750) return false;
     if(activeFilter === "seasonal" && !watch.isSeasonal) return false;
-    if(activeFilter === "specoffer" && !watch.specOffer) return false;
+    if(activeFilter === "specoffer" && (!specBundleOf(watch) || (activeSpecBundle && specBundleOf(watch) !== activeSpecBundle))) return false;
     if(priceMin > 0 || priceMax < 10000){
       if(watch.price < priceMin || watch.price > priceMax) return false;
     }
@@ -5234,7 +5313,7 @@ function renderGrid(){
     if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
     else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
     if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
-    if(watch.specOffer) tags.push('<span class="tag sale">BUY 1 GET 1</span>');
+    if(specBundleLabel(watch)) tags.push(`<span class="tag sale">${specBundleLabel(watch)}</span>`);
 
     const imgLoading = i < EAGER_IMAGE_COUNT ? "eager" : "lazy";
     const fetchPrio = i === 0 ? ' fetchpriority="high"' : '';
@@ -5321,7 +5400,7 @@ function renderHomeFeatured(){
     if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
     else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
     if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
-    if(watch.specOffer) tags.push('<span class="tag sale">BUY 1 GET 1</span>');
+    if(specBundleLabel(watch)) tags.push(`<span class="tag sale">${specBundleLabel(watch)}</span>`);
 
     return `
       <div class="card" id="home-watch-${watch.id}" onclick="openItemDetail(${watch.id})" onpointerdown="preloadWatchSecondaryImages(${watch.id})" role="button" tabindex="0"
@@ -5710,7 +5789,7 @@ function renderSimilarProductsHtml(watch){
           if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
           else if(s.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
           if(s.isNew) tags.push('<span class="tag new">NEW</span>');
-          if(s.specOffer) tags.push('<span class="tag sale">BUY 1 GET 1</span>');
+          if(specBundleLabel(s)) tags.push(`<span class="tag sale">${specBundleLabel(s)}</span>`);
           return `
             <div class="card" id="similar-watch-${s.id}" onclick="openItemDetail(${s.id})" onpointerdown="preloadWatchSecondaryImages(${s.id})" role="button" tabindex="0"
               aria-label="View details for ${escapeHtml(s.name)}"
@@ -5767,7 +5846,7 @@ function renderItemDetail(){
   if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
   else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
   if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
-  if(watch.specOffer) tags.push(`<span class="tag sale">${SPEC_OFFER_TEXT}</span>`);
+  if(specBundleLabel(watch)) tags.push(`<span class="tag sale">Buy 1 Get 1 Free · pick both from Bundle ${specBundleOf(watch)}</span>`);
 
   // Full spec list - only rows with an actual value are shown, so a
   // blank Case Size cell just quietly omits that line.
@@ -5888,7 +5967,7 @@ function addToCart(watchId){
   if(existingLine){
     existingLine.qty += qty;
   } else {
-    cart.push({ watchId, name:watch.name, brand:watch.brand, price, marketPrice, image:watch.images[0], link, codAvailable:watch.codAvailable, qty, specOffer:!!watch.specOffer });
+    cart.push({ watchId, name:watch.name, brand:watch.brand, price, marketPrice, image:watch.images[0], link, codAvailable:watch.codAvailable, qty, specOffer:specNum(watch.specOffer) });
   }
   updateCartCount();
   trackEvent('add_to_cart', { item_id: watch.id, item_name: watch.name, item_brand: watch.brand, price, quantity: qty });
@@ -6257,7 +6336,7 @@ function renderCartLines(){
       <div class="info">
         <div class="n">${escapeHtml(item.name)}</div>
         <div class="m">${escapeHtml(item.brand)} · Qty ${item.qty}</div>
-        <div class="m">₹${item.price} each${cartDiscountPct !== null ? ` <span class="price-was">₹${item.marketPrice}</span> <span class="tag sale" style="vertical-align:1px;">${cartDiscountPct}% OFF</span>` : ''}${item.qty>1 ? ` · ₹${item.price*item.qty} total` : ''}${item.specOffer ? ' <span class="tag sale" style="vertical-align:1px;">BUY 1 GET 1</span>' : ''}</div>
+        <div class="m">₹${item.price} each${cartDiscountPct !== null ? ` <span class="price-was">₹${item.marketPrice}</span> <span class="tag sale" style="vertical-align:1px;">${cartDiscountPct}% OFF</span>` : ''}${item.qty>1 ? ` · ₹${item.price*item.qty} total` : ''}${specBundleLabel(item) ? ` <span class="tag sale" style="vertical-align:1px;">${specBundleLabel(item)}</span>` : ''}</div>
       </div>
       <button class="remove" onclick="event.stopPropagation(); removeFromCart(${idx})">Remove</button>
     </div>
@@ -6281,6 +6360,9 @@ function renderTotals(){
   document.getElementById("sumSpecRow").style.display = specDisc > 0 ? "" : "none";
   document.getElementById("sumSpec").textContent = `-₹${specDisc}`;
   document.getElementById("sumSpecLabel").textContent = SPEC_OFFER_NAME;
+  const hints = specOfferHints(), hintEl = document.getElementById("sumSpecHint");
+  hintEl.innerHTML = hints.map(escapeHtml).join("<br>");
+  hintEl.style.display = hints.length ? "" : "none";
   document.getElementById("sumShip").textContent = shipLabel;
   document.getElementById("sumTotal").textContent = tier.cost === null ? `₹${base} + COD charge` : `₹${base + tier.cost}`;
 }
@@ -6417,7 +6499,7 @@ function submitOrder(e){
     const priceLine = cartDiscountPct !== null
       ? `Price: ₹${item.price}/- each (~₹${item.marketPrice}/-~ ${cartDiscountPct}% OFF)${item.qty>1 ? ` (₹${item.price*item.qty}/- subtotal)` : ''}`
       : `Price: ₹${item.price}/- each${item.qty>1 ? ` (₹${item.price*item.qty}/- subtotal)` : ''}`;
-    msg += `*ITEM ${i+1}*\nProduct: ${item.name}\nQuantity: ${item.qty}\n${priceLine}${item.specOffer ? ` [${SPEC_OFFER_NAME}]` : ""}\nLink: ${item.link}\n\n`;
+    msg += `*ITEM ${i+1}*\nProduct: ${item.name}\nQuantity: ${item.qty}\n${priceLine}${specBundleOf(item) ? ` [Bundle ${specBundleOf(item)}: Buy 1 Get 1 Free]` : ""}\nLink: ${item.link}\n\n`;
   });
 
   msg += `*CUSTOMER DETAILS*\nName: ${name}\nFull Address: ${address}\nState: ${state}\nDistrict: ${district}\nCity: ${town}\nPincode: ${pin}\nNearest Landmark: ${landmark || "N/A"}\nContact Number 1: ${phone1}\nContact Number 2: ${phone2 || "N/A"}\n`;
