@@ -683,16 +683,28 @@
   .breadcrumb-current{ font-weight:800; color:var(--ink); }
   .breadcrumb-sep{ color:var(--muted); font-size:11px; }
 
-  /* ---------- Welcome Page: all-categories banner (between hero and Products) ----------
+  /* ---------- Welcome Page: all-categories banner (just above Offers) ----------
      Same look as the hero banner above (it reuses .home-hero-banner, .home-hero-ctas
      and the gold .home-hero-btn-shop pill) - one landscape image with one pill
      button per category laid over its bottom edge. */
   .home-allcat-banner{ margin-top:12px; }
   .home-allcat-banner img{ object-position:center; }
-  .home-allcat-banner::after{ background:linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0) 62%); }
-  .home-allcat-banner .home-hero-ctas{ right:16px; flex-wrap:wrap; gap:8px; }
-  @media(min-width:640px){ .home-allcat-banner .home-hero-ctas{ right:24px; gap:10px; } }
-  @media(max-width:639px){ .home-allcat-banner .home-hero-btn{ padding:7px 12px; min-height:30px; font-size:10.5px; } }
+  /* Tablet/desktop: banner has the image's own 21:9 ratio so nothing is cropped;
+     buttons sit over the empty bottom edge of the image. */
+  @media(min-width:640px){
+    .home-allcat-banner{ aspect-ratio:21/9; }
+    .home-allcat-banner::after{ background:linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0) 62%); }
+    .home-allcat-banner .home-hero-ctas{ right:24px; flex-wrap:wrap; gap:10px; }
+  }
+  /* Phones: full image on top (never cropped, never covered); the buttons get
+     their own dark strip right under it - 2 rows for the 7 categories. */
+  @media(max-width:639px){
+    .home-allcat-banner{ aspect-ratio:auto; background:#18120c; }
+    .home-allcat-banner::after{ display:none; }
+    .home-allcat-banner img{ position:static; display:block; width:100%; height:auto; object-fit:fill; }
+    .home-allcat-banner .home-hero-ctas{ position:static; flex-wrap:wrap; justify-content:center; gap:8px; padding:6px 12px 16px; }
+    .home-allcat-banner .home-hero-btn{ padding:7px 10px; min-height:30px; font-size:10px; }
+  }
 
   /* ---------- Welcome Page: Products section ---------- */
   .home-cat-section{ padding:18px 16px 4px; }
@@ -744,6 +756,7 @@
   /* Seasonal sale tile - Christmas red-to-green. This gradient only shows
      if images/christmas-portrait.jpg (3:4) fails to load. */
   .offer-card.offer-seasonal{ background:linear-gradient(135deg, #8b1a1a 0%, #165b33 100%); }
+  .offer-card.offer-specs{ background:linear-gradient(135deg, #161616 0%, #b8860b 100%); } /* only visible if images/offer-spectacles.jpg (3:4) fails to load */
 
   /* Homepage-only: the seasonal offer gets a wide banner card instead of
      the portrait offer-card style above (that style stays for the Offers
@@ -778,6 +791,20 @@
   }
   @media(min-width:480px){ .offer-seasonal-banner-label{ font-size:24px; left:22px; } }
   @media(min-width:640px){ .offer-seasonal-banner-label{ font-size:30px; left:28px; } }
+
+  /* Spectacles offer banner (Spectacles page): same look as the seasonal banner
+     but informational, not a button. */
+  .spec-offer-banner{
+    width:auto; margin:14px 16px 0; cursor:default;
+    background:linear-gradient(135deg, #161616 0%, #b8860b 100%); /* only visible if images/offer-spectacles-banner.jpg fails to load */
+  }
+  .spec-offer-banner:hover{ transform:none; box-shadow:var(--shadow-2); }
+  .spec-offer-sub{
+    display:block; margin-top:8px; font-family:inherit; font-style:normal; font-weight:700;
+    font-size:12.5px; line-height:1.4; letter-spacing:0.02em; color:var(--gold-soft);
+  }
+  @media(min-width:640px){ .spec-offer-sub{ font-size:15px; } }
+  @media(min-width:1280px){ .spec-offer-banner{ max-width:1168px; margin:14px auto 0; } }
 
   /* Compact version of the same 3 cards, used as the "which tier"
      sub-nav on the Offers grid page itself (Home's Offers section stays
@@ -2030,15 +2057,6 @@
       <button class="home-hero-btn home-hero-btn-shop" onclick="showAllProducts()">Shop</button>
     </div>
   </div>
-  <!-- All-categories banner: ONE landscape image (images/category-banner.jpg,
-       21:9) showing every category we sell, with a gold pill button per
-       category over its bottom edge. Buttons are built by
-       renderHomeAllCatBanner() from HOME_BANNER_ITEMS. If the image is
-       missing it is removed and the buttons sit on the dark background. -->
-  <section class="home-hero-banner home-allcat-banner" id="homeAllCatBanner" aria-label="All product categories" style="display:none">
-    <img src="images/category-banner.jpg" alt="" onerror="this.remove()">
-    <div class="home-hero-ctas" id="homeAllCatCtas"></div>
-  </section>
   <!-- Products: one card per product type, just under the hero.
        Watches is fixed; the accessory cards (Spectacles/Belts/Bags/...)
        are generated from the Category values actually in the Accessories
@@ -2077,13 +2095,23 @@
     </button>
   </div>
 
-  <!-- Offer Watches: seasonal sale banner (landscape image, only while some
+  <!-- All-categories banner: ONE landscape image (images/category-banner.jpg,
+       21:9) showing every category we sell, with a gold pill button per
+       category (7 main categories). Buttons are built by
+       renderHomeAllCatBanner() from HOME_BANNER_ITEMS. If the image is
+       missing it is removed and the buttons sit on the dark background. -->
+  <section class="home-hero-banner home-allcat-banner" id="homeAllCatBanner" aria-label="All product categories" style="display:none">
+    <img src="images/category-banner.jpg" alt="" onerror="this.remove()">
+    <div class="home-hero-ctas" id="homeAllCatCtas"></div>
+  </section>
+
+  <!-- Offers: Spectacles offer tile first, seasonal sale banner (landscape image, only while some
        product has Seasonal Sale = TRUE) + one image card per price budget
        (only budgets that have at least one cheaper watch). Images:
        images/christmas-landscape.jpg (landscape, 21:9), images/offer-500.jpg,
        offer-1000.jpg, offer-1500.jpg (portrait). -->
   <section class="home-cat-section" id="homeBudgetSection" style="display:none">
-    <h2 class="home-cat-heading">Offer Watches</h2>
+    <h2 class="home-cat-heading">Offers</h2>
     <button class="offer-seasonal-banner" id="seasonalOfferCard" style="display:none" onclick="selectPriceTierHero('seasonal')">
       <img class="offer-seasonal-banner-img" src="images/christmas-landscape.jpg" alt="" onerror="this.remove()">
       <span class="offer-seasonal-banner-label" id="seasonalBannerLabel"></span>
@@ -2119,6 +2147,13 @@
 
 <div id="productsView">
 <h1 class="page-heading" id="pageHeading" style="display:none"></h1>
+<!-- Spectacles offer banner: only on the Spectacles page while some spectacles
+     have Spec Offer = TRUE. Image: images/offer-spectacles-banner.jpg (21:9);
+     the text is set from SPEC_OFFER_BANNER_HTML. -->
+<section class="offer-seasonal-banner spec-offer-banner" id="specOfferBanner" style="display:none" aria-label="Spectacles offer">
+  <img class="offer-seasonal-banner-img" src="images/offer-spectacles-banner.jpg" alt="" onerror="this.remove()">
+  <span class="offer-seasonal-banner-label" id="specOfferBannerLabel"></span>
+</section>
 <div class="ap-gender-tiles" id="apGenderTiles" style="display:none">
   <button class="ap-gender-tile" onclick="selectGenderCategory('mens')" aria-label="Shop Men's Watches">
     <img src="images/hero-mens.jpg" alt="Man wearing a stainless steel automatic watch" loading="lazy">
@@ -2460,6 +2495,7 @@
     <div class="cart-bottom-bar">
       <div id="cartTotals" style="display:none;">
         <div class="cart-subline"><span>Base Price</span><span id="sumBase"></span></div>
+        <div class="cart-subline" id="sumSpecRow" style="display:none"><span>Spectacles Offer</span><span id="sumSpec"></span></div>
         <div class="cart-subline"><span>Shipping</span><span id="sumShip"></span></div>
         <div class="cart-total"><span>Grand Total</span><span id="sumTotal"></span></div>
       </div>
@@ -2537,6 +2573,11 @@
                         are ignored). The normal Price then shows struck through
                         (or Market Price, if Sale = TRUE and it is higher).
                         Blank/0/invalid/not lower = normal Price, silently.
+   Spec Offer       -> true/false (also Spec_Offer / spec_offer), Spectacles rows
+                        only. TRUE = part of the bundle offer: any 1 for ₹399 or
+                        any 2 for ₹699 across ALL such rows (prices set by
+                        SPEC_OFFER_ONE / SPEC_OFFER_TWO in the code). Only these
+                        products change the cart total; other rows are untouched.
    COD Available    -> true/false, shows "Cash on Delivery Available" on
                         the item page - only selected products support COD
    New Arrival      -> true/false. The NEW tag, the "New Arrivals" filter and the
@@ -2891,6 +2932,9 @@ function rowsToWatches(rows){
       // season "off" is just clearing this column back to FALSE/blank for
       // every row - no code change needed.
       isSeasonal: seasonalFlag,
+      // "Spec Offer" = TRUE puts a SPECTACLES product in the bundle offer
+      // (see SPEC_OFFER_ONE/TWO). Ignored on any other category.
+      specOffer: toBool(getRowValue(r, "Spec Offer", "Spec_Offer", "spec_offer")) && accessoryCatKey(productCategory) === accessoryCatKey("Spectacles"),
       // "1" and "2" both list the product; "0", blank, or anything else
       // keeps it out of the catalog entirely. "2" additionally gets sort
       // priority in the default view (see listedPriority + the "latest"
@@ -3033,8 +3077,9 @@ function reconcileCartWithCatalog(){
     // watch.price = customer price (seasonal when active) and watch.marketPrice =
     // reference price (null unless a real discount), so a cart line reprices
     // by itself - and loses its strikethrough - when the sale ends.
-    if(watch.price !== item.price || watch.marketPrice !== item.marketPrice || watch.images[0] !== item.image || watch.name !== item.name || watch.brand !== item.brand){
-      if(watch.price !== item.price) priceChanged = true;
+    if(watch.price !== item.price || watch.marketPrice !== item.marketPrice || !!watch.specOffer !== !!item.specOffer || watch.images[0] !== item.image || watch.name !== item.name || watch.brand !== item.brand){
+      if(watch.price !== item.price || !!watch.specOffer !== !!item.specOffer) priceChanged = true;
+      item.specOffer = !!watch.specOffer; // offer switched on/off in the sheet -> cart total follows
       item.price = watch.price;
       item.marketPrice = watch.marketPrice;
       item.image = watch.images[0];
@@ -4022,7 +4067,9 @@ function updatePageChrome(){
   const heading = document.getElementById("pageHeading");
   const tiles = document.getElementById("apGenderTiles");
   const offersTierStrip = document.getElementById("offersTierStrip");
+  const specBanner = document.getElementById("specOfferBanner");
   if(onWelcomePage){
+    if(specBanner) specBanner.style.display = "none";
     if(heading) heading.style.display = "none";
     if(tiles) tiles.style.display = "none";
     if(offersTierStrip){ offersTierStrip.style.display = "none"; offersTierStrip.innerHTML = ""; }
@@ -4047,6 +4094,11 @@ function updatePageChrome(){
 
   if(heading){ heading.textContent = label; heading.style.display = ""; }
   if(tiles) tiles.style.display = isPlainAllProducts ? "flex" : "none";
+  if(specBanner){
+    const showSpec = activeSection === "accessories" && accessoryCatKey(activeAccessoryCat) === accessoryCatKey("Spectacles") && hasSpecOffer();
+    specBanner.style.display = showSpec ? "" : "none";
+    if(showSpec) document.getElementById("specOfferBannerLabel").innerHTML = SPEC_OFFER_BANNER_HTML;
+  }
   renderOffersTierStrip(offersTierStrip, isOffersTier);
   renderBreadcrumb();
 }
@@ -4057,6 +4109,32 @@ function updatePageChrome(){
 // and images/christmas-portrait.jpg (3:4, Offers page tile) - two separate files.
 const SEASONAL_SALE_LABEL = "Christmas & New Year Sale";
 const SEASONAL_SALE_LABEL_HTML = "Christmas &amp; New Year<br>Sale";
+
+// Spectacles offer: spectacles with "Spec Offer = TRUE" in the sheet are
+// bundle-priced IN THE CART - any 1 for SPEC_OFFER_ONE, any 2 for
+// SPEC_OFFER_TWO (3 = a pair + 1, 4 = two pairs ...). Only units of those
+// flagged products count; every other product, and spectacles that are not
+// flagged, are priced exactly as before. Never charges more than the normal
+// prices would. Edit the two prices here to change the offer everywhere.
+const SPEC_OFFER_ONE = 399;
+const SPEC_OFFER_TWO = 699;
+const SPEC_OFFER_TEXT = `Buy any 1 @ ₹${SPEC_OFFER_ONE} or any 2 @ ₹${SPEC_OFFER_TWO}`;
+const SPEC_OFFER_TILE_HTML = `Spectacles<br>Buy 1 @ ₹${SPEC_OFFER_ONE}<br>Buy 2 @ ₹${SPEC_OFFER_TWO}`;
+const SPEC_OFFER_BANNER_HTML = `Spectacles Offer<span class="spec-offer-sub">Buy any 1 @ ₹${SPEC_OFFER_ONE}<br>or any 2 @ ₹${SPEC_OFFER_TWO}</span>`;
+function hasSpecOffer(){ return ACCESSORIES.some(a => a.specOffer); }
+function openSpecOffer(){ openAccessoryCategory(homeBannerRealCategory({ cat:"Spectacles" }) || "Spectacles"); }
+// How much the offer takes off the cart right now (0 when no flagged
+// spectacles are in it, or the normal prices are already cheaper).
+function cartBase(){ return cart.reduce((sum,i)=>sum+i.price*i.qty, 0) - specOfferDiscount(); }
+function specOfferDiscount(){
+  const unitPrices = [];
+  cart.forEach(i => { if(i.specOffer) for(let k = 0; k < (i.qty || 1); k++) unitPrices.push(i.price); });
+  if(!unitPrices.length) return 0;
+  const n = unitPrices.length;
+  const normal = unitPrices.reduce((a, b) => a + b, 0);
+  const bundle = Math.floor(n / 2) * SPEC_OFFER_TWO + (n % 2) * SPEC_OFFER_ONE;
+  return Math.max(0, normal - bundle);
+}
 
 // Price budgets offered on the homepage and the Offers page. A budget is
 // only offered while at least one watch is actually cheaper than it, so it
@@ -4092,21 +4170,17 @@ function renderOffersTierStrip(el, isOffersTier){
   el.innerHTML = cards.join("");
 }
 
-// All-categories banner (Welcome Page, between hero and Products). Each button
-// opens its product category; `sub` (optional) then pre-selects that Type
-// inside it, if the sheet has a matching sub-category - otherwise the whole
-// category opens. Categories not in the sheet yet (Jackets, Wallets) are
-// hidden until they have rows, same as the nav; Watches/Spectacles/Bags/Belts/
-// Caps are permanent (ACCESSORY_DEFAULT_CATEGORIES).
+// All-categories banner (Welcome Page, just above "Offer Watches"). One button
+// per MAIN category; each opens that category's page. Jackets/Wallets are
+// hidden until the sheet has rows for them (same as the nav); Watches,
+// Spectacles, Bags, Belts and Caps are permanent (ACCESSORY_DEFAULT_CATEGORIES).
 const HOME_BANNER_ITEMS = [
   { label:"Watches",    cat:"Watches" },
   { label:"Spectacles", cat:"Spectacles" },
-  { label:"Sunglasses", cat:"Spectacles", sub:"Sunglasses" },
-  { label:"Backpacks",  cat:"Bags", sub:"Backpack" },
-  { label:"Ladies Bag", cat:"Bags", sub:"Ladies Bag" },
-  { label:"Jackets",    cat:"Jackets" },
-  { label:"Wallets",    cat:"Wallets" },
+  { label:"Bags",       cat:"Bags" },
   { label:"Belts",      cat:"Belts" },
+  { label:"Wallets",    cat:"Wallets" },
+  { label:"Jackets",    cat:"Jackets" },
   { label:"Caps",       cat:"Caps" }
 ];
 function homeBannerRealCategory(it){
@@ -4127,12 +4201,7 @@ function openHomeBannerItem(i){
   if(!it) return;
   if(it.cat === "Watches"){ showAllProducts(); return; }
   const real = homeBannerRealCategory(it);
-  if(!real) return;
-  openAccessoryCategory(real);
-  if(it.sub){
-    const hit = ACCESSORIES.find(a => a.productCategory === real && accessoryCatKey(a.category) === accessoryCatKey(it.sub));
-    if(hit) setCategory(hit.category);
-  }
+  if(real) openAccessoryCategory(real);
 }
 
 function renderBudgetCards(){
@@ -4144,9 +4213,15 @@ function renderBudgetCards(){
   if(lbl) lbl.innerHTML = SEASONAL_SALE_LABEL_HTML;
   const seasonalCard = document.getElementById("seasonalOfferCard");
   if(seasonalCard) seasonalCard.setAttribute("aria-label", SEASONAL_SALE_LABEL);
-  sec.style.display = (tiers.length || hasSeasonalOffer) ? "" : "none";
-  row.style.display = tiers.length ? "" : "none";
-  row.innerHTML = tiers.map(n => `
+  // First tile: the Spectacles offer (only while some spectacles have Spec Offer = TRUE).
+  const specTile = hasSpecOffer() ? `
+    <button class="offer-card offer-specs" onclick="openSpecOffer()" aria-label="Spectacles offer: ${escapeHtml(SPEC_OFFER_TEXT)}">
+      ${offerImgTag("offer-spectacles.jpg")}
+      <span class="offer-card-label">${SPEC_OFFER_TILE_HTML}</span>
+    </button>` : "";
+  sec.style.display = (tiers.length || hasSeasonalOffer || specTile) ? "" : "none";
+  row.style.display = (tiers.length || specTile) ? "" : "none";
+  row.innerHTML = specTile + tiers.map(n => `
     <button class="offer-card offer-${n}" onclick="selectPriceTierHero('under${n}')" aria-label="Shop watches under ${n} rupees">
       ${offerImgTag("offer-"+n+".jpg")}
       <span class="offer-card-label">Under &#8377;${n.toLocaleString("en-IN")}</span>
@@ -5142,6 +5217,7 @@ function renderGrid(){
     if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
     else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
     if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
+    if(watch.specOffer) tags.push('<span class="tag sale">OFFER</span>');
 
     const imgLoading = i < EAGER_IMAGE_COUNT ? "eager" : "lazy";
     const fetchPrio = i === 0 ? ' fetchpriority="high"' : '';
@@ -5228,6 +5304,7 @@ function renderHomeFeatured(){
     if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
     else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
     if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
+    if(watch.specOffer) tags.push('<span class="tag sale">OFFER</span>');
 
     return `
       <div class="card" id="home-watch-${watch.id}" onclick="openItemDetail(${watch.id})" onpointerdown="preloadWatchSecondaryImages(${watch.id})" role="button" tabindex="0"
@@ -5616,6 +5693,7 @@ function renderSimilarProductsHtml(watch){
           if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
           else if(s.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
           if(s.isNew) tags.push('<span class="tag new">NEW</span>');
+          if(s.specOffer) tags.push('<span class="tag sale">OFFER</span>');
           return `
             <div class="card" id="similar-watch-${s.id}" onclick="openItemDetail(${s.id})" onpointerdown="preloadWatchSecondaryImages(${s.id})" role="button" tabindex="0"
               aria-label="View details for ${escapeHtml(s.name)}"
@@ -5672,6 +5750,7 @@ function renderItemDetail(){
   if(hasDiscount) tags.push(`<span class="tag sale">${discountPct}% OFF</span>`);
   else if(watch.isSale) tags.push('<span class="tag sale">DISCOUNT</span>');
   if(watch.isNew) tags.push('<span class="tag new">NEW</span>');
+  if(watch.specOffer) tags.push(`<span class="tag sale">${SPEC_OFFER_TEXT}</span>`);
 
   // Full spec list - only rows with an actual value are shown, so a
   // blank Case Size cell just quietly omits that line.
@@ -5792,7 +5871,7 @@ function addToCart(watchId){
   if(existingLine){
     existingLine.qty += qty;
   } else {
-    cart.push({ watchId, name:watch.name, brand:watch.brand, price, marketPrice, image:watch.images[0], link, codAvailable:watch.codAvailable, qty });
+    cart.push({ watchId, name:watch.name, brand:watch.brand, price, marketPrice, image:watch.images[0], link, codAvailable:watch.codAvailable, qty, specOffer:!!watch.specOffer });
   }
   updateCartCount();
   trackEvent('add_to_cart', { item_id: watch.id, item_name: watch.name, item_brand: watch.brand, price, quantity: qty });
@@ -6161,7 +6240,7 @@ function renderCartLines(){
       <div class="info">
         <div class="n">${escapeHtml(item.name)}</div>
         <div class="m">${escapeHtml(item.brand)} · Qty ${item.qty}</div>
-        <div class="m">₹${item.price} each${cartDiscountPct !== null ? ` <span class="price-was">₹${item.marketPrice}</span> <span class="tag sale" style="vertical-align:1px;">${cartDiscountPct}% OFF</span>` : ''}${item.qty>1 ? ` · ₹${item.price*item.qty} total` : ''}</div>
+        <div class="m">₹${item.price} each${cartDiscountPct !== null ? ` <span class="price-was">₹${item.marketPrice}</span> <span class="tag sale" style="vertical-align:1px;">${cartDiscountPct}% OFF</span>` : ''}${item.qty>1 ? ` · ₹${item.price*item.qty} total` : ''}${item.specOffer ? ' <span class="tag sale" style="vertical-align:1px;">OFFER</span>' : ''}</div>
       </div>
       <button class="remove" onclick="event.stopPropagation(); removeFromCart(${idx})">Remove</button>
     </div>
@@ -6177,10 +6256,13 @@ function renderTotals(){
   const totalsBox = document.getElementById("cartTotals");
   if(cart.length === 0){ totalsBox.style.display="none"; return; }
   totalsBox.style.display = "block";
-  const base = cart.reduce((sum,i)=>sum+i.price*i.qty, 0);
+  const specDisc = specOfferDiscount();
+  const base = cart.reduce((sum,i)=>sum+i.price*i.qty, 0) - specDisc; // after the Spectacles offer
   const tier = SHIPPING_TIERS[selectedShipping];
   const shipLabel = tier.cost === null ? `₹${COD_CHARGE_MIN}-₹${COD_CHARGE_MAX} extra` : (tier.cost === 0 ? "Free (prepaid)" : `₹${tier.cost}`);
-  document.getElementById("sumBase").textContent = `₹${base}`;
+  document.getElementById("sumBase").textContent = `₹${base + specDisc}`;
+  document.getElementById("sumSpecRow").style.display = specDisc > 0 ? "" : "none";
+  document.getElementById("sumSpec").textContent = `-₹${specDisc}`;
   document.getElementById("sumShip").textContent = shipLabel;
   document.getElementById("sumTotal").textContent = tier.cost === null ? `₹${base} + COD charge` : `₹${base + tier.cost}`;
 }
@@ -6206,7 +6288,7 @@ function openCheckout(){
   // showing, rather than tapping "Continue Shopping".
   document.getElementById("checkoutForm").style.display = "";
   document.getElementById("orderConfirmation").style.display = "none";
-  trackEvent('begin_checkout', { value: cart.reduce((sum,item)=> sum + item.price*item.qty, 0), items: cart.length });
+  trackEvent('begin_checkout', { value: cartBase(), items: cart.length });
 }
 
 function backToCart(){
@@ -6301,7 +6383,8 @@ function submitOrder(e){
   const phone2 = document.getElementById("f_phone2").value.trim();
   const remarks = document.getElementById("f_remarks").value.trim();
 
-  const base = cart.reduce((sum,i)=>sum+i.price*i.qty, 0);
+  const specDisc = specOfferDiscount();
+  const base = cart.reduce((sum,i)=>sum+i.price*i.qty, 0) - specDisc; // after the Spectacles offer
   const tier = SHIPPING_TIERS[selectedShipping];
   const isCod = tier.cost === null;
   const shipLabel = isCod ? `COD charge ₹${COD_CHARGE_MIN}-₹${COD_CHARGE_MAX}/- extra (varies by weight and location)` : (tier.cost === 0 ? "Free - Prepaid (4-7 days)" : `Fast Shipping ₹300/- (3-4 days)`);
@@ -6316,19 +6399,19 @@ function submitOrder(e){
     const priceLine = cartDiscountPct !== null
       ? `Price: ₹${item.price}/- each (~₹${item.marketPrice}/-~ ${cartDiscountPct}% OFF)${item.qty>1 ? ` (₹${item.price*item.qty}/- subtotal)` : ''}`
       : `Price: ₹${item.price}/- each${item.qty>1 ? ` (₹${item.price*item.qty}/- subtotal)` : ''}`;
-    msg += `*ITEM ${i+1}*\nProduct: ${item.name}\nQuantity: ${item.qty}\n${priceLine}\nLink: ${item.link}\n\n`;
+    msg += `*ITEM ${i+1}*\nProduct: ${item.name}\nQuantity: ${item.qty}\n${priceLine}${item.specOffer ? " [Spectacles offer]" : ""}\nLink: ${item.link}\n\n`;
   });
 
   msg += `*CUSTOMER DETAILS*\nName: ${name}\nFull Address: ${address}\nState: ${state}\nDistrict: ${district}\nCity: ${town}\nPincode: ${pin}\nNearest Landmark: ${landmark || "N/A"}\nContact Number 1: ${phone1}\nContact Number 2: ${phone2 || "N/A"}\n`;
   if(insta) msg += `Instagram: ${insta}\n`;
   msg += `\n`;
   if(remarks) msg += `*REMARKS / NOTES*\n${remarks}\n\n`;
-  msg += `*ORDER SUMMARY*\nBase Price: ₹${base}/-\nShipping: ${shipLabel}\n`;
+  msg += `*ORDER SUMMARY*\nBase Price: ₹${base + specDisc}/-\n${specDisc > 0 ? `Spectacles Offer: -₹${specDisc}/-\n` : ""}Shipping: ${shipLabel}\n`;
   msg += `*GRAND TOTAL: ${grandTotal}*`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.open(url, "_blank", "noopener");
-  trackEvent('generate_lead', { value: cart.reduce((sum,item)=> sum + item.price*item.qty, 0), items: cart.length, currency: "INR" });
+  trackEvent('generate_lead', { value: cartBase(), items: cart.length, currency: "INR" });
 
   // Show a clear success state instead of leaving the customer looking at
   // the same cart/checkout screen with no sign anything happened.
